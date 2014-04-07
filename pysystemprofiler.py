@@ -49,8 +49,10 @@ class SystemProfiler(object):
 
     def get_storage_data(self):
         d1 = self.get_data('SPStorageDataType')
-        d2 = d1['com.apple.corestorage.lvg'] 
-        return d2
+        if 'com.apple.corestorage.lvg' in d1:
+            d2 = d1['com.apple.corestorage.lvg']
+            return d2
+        return d1
 
     def get_hardware_data(self):
         d = self.get_data('SPHardwareDataType')
@@ -90,8 +92,8 @@ def main():
     print_data('UNIVERSAL ACCESS', universal_access)
     dev_tools = sysprofiler.get_dev_tools()
     print_data('DEVELOPER TOOLS', dev_tools)
-    config_profile = sysprofiler.get_config_profile()
-    print_data('CONFIGURATION PROFILE', config_profile)
+    # config_profile = sysprofiler.get_config_profile()
+    # print_data('CONFIGURATION PROFILE', config_profile)
     install_history = sysprofiler.get_install_history()
     print_data('INSTALL HISTORY', install_history)
 
