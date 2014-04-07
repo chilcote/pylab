@@ -24,59 +24,76 @@ import os, sys, subprocess
 import plistlib
 from pprint import pprint
 
-def get_data(category, recursive=False):
-    cmd = '/usr/sbin/system_profiler', category, '-xml'
-    task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (out, err) = task.communicate()
-    if not recursive:
-        plist = plistlib.readPlistFromString(out)[0]['_items'][0]
-    else:
-        plist = plistlib.readPlistFromString(out)[0]['_items']
-    return plist
+class SystemProfiler(object):
+    '''This object returns dictionaries of data from system_profiler'''
 
-def debug_get_data(category):
-    cmd = '/usr/sbin/system_profiler', category, '-xml'
-    task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (out, err) = task.communicate()
-    plist = plistlib.readPlistFromString(out)[0]
-    return plist
+    def __init__(self):
+        pass
 
-def print_data(dict):
-    for k, v in dict.items():
+    def get_data(self, category, recursive=False):
+        cmd = '/usr/sbin/system_profiler', category, '-xml'
+        task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (out, err) = task.communicate()
+        if not recursive:
+            plist = plistlib.readPlistFromString(out)[0]['_items'][0]
+        else:
+            plist = plistlib.readPlistFromString(out)[0]['_items']
+        return plist
+
+    def debug_get_data(self, category):
+        cmd = '/usr/sbin/system_profiler', category, '-xml'
+        task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (out, err) = task.communicate()
+        plist = plistlib.readPlistFromString(out)[0]
+        return plist
+
+    def get_storage_data(self):
+        d1 = self.get_data('SPStorageDataType')
+        d2 = d1['com.apple.corestorage.lvg'] 
+        return d2
+
+    def get_hardware_data(self):
+        d = self.get_data('SPHardwareDataType')
+        return d
+
+    def get_universal_access_data(self):
+        d = self.get_data('SPUniversalAccessDataType')
+        return d
+
+    def get_dev_tools(self):
+        d = self.get_data('SPDeveloperToolsDataType')
+        return d
+
+    def get_config_profile(self):
+        d = self.get_data('SPConfigurationProfileDataType')
+        return d
+
+    def get_install_history(self):
+        install_history = self.get_data('SPInstallHistoryDataType', recursive=True)
+        d = {}
+        for item in install_history:
+            d[item['_name']] = item['install_date']
+        return d
+
+def print_data(title, dct):
+    print '\n%s\n-------------------' % title
+    for k, v in dct.items():
         print '%s: %s' % (k,v)
 
 def main():
-    print '\nSTORAGE DATA\n-------------------'
-    storage_data = get_data('SPStorageDataType')
-    print_data(storage_data['com.apple.corestorage.lvg'])
-    # pprint(storage_data)
-
-    print '\nHARDWARE DATA\n-------------------'
-    hardware_data = get_data('SPHardwareDataType')
-    print_data(hardware_data)
-    #pprint(hardware_data)
-    
-    print '\nUNIVERSAL ACCESS\n-------------------'
-    universal_access = get_data('SPUniversalAccessDataType')
-    print_data(universal_access)
-    # pprint(universal_access)
-    
-    print '\nCONFIGURATION PROFILE\n-------------------'
-    config_profile = get_data('SPConfigurationProfileDataType')
-    print_data(config_profile['_items'][0])
-    # pprint(config_profile)
-
-    print '\nDEVELOPER TOOLS\n-------------------'
-    dev_tools = get_data('SPDeveloperToolsDataType')
-    print_data(dev_tools)
-    # pprint(dev_tools)
-    
-    print '\nINSTALL HISTORY\n-------------------'
-    install_history = get_data('SPInstallHistoryDataType', recursive=True)
-    for item in install_history:
-        print '%s: %s' % (item['_name'], item['install_date'])
-    # pprint(install_history)
-
+    sysprofiler = SystemProfiler()
+    storage_data = sysprofiler.get_storage_data()
+    print_data('STORAGE DATA', storage_data)
+    hardware_data = sysprofiler.get_hardware_data()
+    print_data('HARDWARE DATA', hardware_data)
+    universal_access = sysprofiler.get_universal_access_data()
+    print_data('UNIVERSAL ACCESS', universal_access)
+    dev_tools = sysprofiler.get_dev_tools()
+    print_data('DEVELOPER TOOLS', dev_tools)
+    config_profile = sysprofiler.get_config_profile()
+    print_data('CONFIGURATION PROFILE', config_profile)
+    install_history = sysprofiler.get_install_history()
+    print_data('INSTALL HISTORY', install_history)
 
 if __name__ == "__main__":
     main()
