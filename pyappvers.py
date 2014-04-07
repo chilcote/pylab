@@ -4,7 +4,7 @@
 This script returns the version of the specified Application
 
 usage:
-	./pyappvers.py "VMware Fusion"
+    ./pyappvers.py "VMware Fusion"
 
 Documentation:
 https://developer.apple.com/library/mac/documentation/CoreFoundation/Reference/CFPreferencesUtils/Reference/reference.html
@@ -36,39 +36,39 @@ app_list.extend(glob.glob('/Applications/*/' '*.app'))
 app_list.extend(glob.glob('/Users/*/Applications/' '*.app'))
 
 def usage():
-	print 'Usage: ./pyappvers.py APPLICATION'
+    print 'Usage: ./pyappvers.py APPLICATION'
 
 def debug(name, path, plist, version):
-	print app_list
-	print "Application name: %s" % name
-	print 'Application path: %s' % path
-	print 'Info.plist path: %s' % plist
-	print 'Version: %s' % version
+    print app_list
+    print "Application name: %s" % name
+    print 'Application path: %s' % path
+    print 'Info.plist path: %s' % plist
+    print 'Version: %s' % version
 
 def main():
-	app_path = ''
-	if not len(sys.argv) == 2:
-		usage()
-		sys.exit(0)
-	app_name = sys.argv[1] + '.app'
-	for app in app_list:
-		if app_name in app:
-			app_path = app
-	if not os.path.exists(app_path):
-		print "Can't find that application!"
-		sys.exit(0)
-	plist = os.path.join(app_path, 'Contents/Info.plist')
-	if not os.path.exists(plist):
-		print "Can't find the Info.plist!"
-		sys.exit(0)
-	version = CFPreferencesCopyAppValue('CFBundleShortVersionString', plist)
-	if not version:
-		print "No version information found!"
-		sys.exit(0)
-	if not DEBUG:
-		print version
-		sys.exit(0)
-	debug(app_name, app_path, plist, version)
+    app_path = ''
+    if not len(sys.argv) == 2:
+        usage()
+        sys.exit(0)
+    app_name = sys.argv[1] + '.app'
+    for app in app_list:
+        if app_name in app:
+            app_path = app
+    if not os.path.exists(app_path):
+        print "Can't find that application!"
+        sys.exit(0)
+    plist = os.path.join(app_path, 'Contents/Info.plist')
+    if not os.path.exists(plist):
+        print "Can't find the Info.plist!"
+        sys.exit(0)
+    version = CFPreferencesCopyAppValue('CFBundleShortVersionString', plist)
+    if not version:
+        print "No version information found!"
+        sys.exit(0)
+    if not DEBUG:
+        print version
+        sys.exit(0)
+    debug(app_name, app_path, plist, version)
 
 if __name__ == "__main__":
-	main()
+    main()
