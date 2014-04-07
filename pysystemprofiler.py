@@ -30,17 +30,7 @@ class SystemProfiler(object):
     def __init__(self):
         pass
 
-    def get_data(self, category, recursive=False):
-        cmd = '/usr/sbin/system_profiler', category, '-xml'
-        task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (out, err) = task.communicate()
-        if not recursive:
-            plist = plistlib.readPlistFromString(out)[0]['_items'][0]
-        else:
-            plist = plistlib.readPlistFromString(out)[0]['_items']
-        return plist
-
-    def debug_get_data(self, category):
+    def get_data(self, category):
         cmd = '/usr/sbin/system_profiler', category, '-xml'
         task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (out, err) = task.communicate()
@@ -48,34 +38,33 @@ class SystemProfiler(object):
         return plist
 
     def get_storage_data(self):
-        d1 = self.get_data('SPStorageDataType')
-        if 'com.apple.corestorage.lvg' in d1:
-            d2 = d1['com.apple.corestorage.lvg']
-            return d2
-        return d1
+        d = self.get_data('SPStorageDataType')['_items']
+        if 'com.apple.corestorage.lvg' in d:
+            return d['_items']['com.apple.corestorage.lvg'][0]
+        return d[0]
 
     def get_hardware_data(self):
-        d = self.get_data('SPHardwareDataType')
-        return d
+        d = self.get_data('SPHardwareDataType')['_items']
+        return d[0]
 
     def get_universal_access_data(self):
-        d = self.get_data('SPUniversalAccessDataType')
-        return d
+        d = self.get_data('SPUniversalAccessDataType')['_items']
+        return d[0]
 
     def get_dev_tools(self):
-        d = self.get_data('SPDeveloperToolsDataType')
-        return d
+        d = self.get_data('SPDeveloperToolsDataType')['_items']
+        return d[0]
 
     def get_config_profile(self):
         d = self.get_data('SPConfigurationProfileDataType')
         return d
 
     def get_install_history(self):
-        install_history = self.get_data('SPInstallHistoryDataType', recursive=True)
-        d = {}
-        for item in install_history:
-            d[item['_name']] = item['install_date']
-        return d
+        d = self.get_data('SPInstallHistoryDataType')['_items']
+        d1 = {}
+        for item in d:
+            d1[item['_name']] = item['install_date']
+        return d1
 
 def print_data(title, dct):
     print '\n%s\n-------------------' % title
@@ -84,6 +73,7 @@ def print_data(title, dct):
 
 def main():
     sysprofiler = SystemProfiler()
+
     storage_data = sysprofiler.get_storage_data()
     print_data('STORAGE DATA', storage_data)
     hardware_data = sysprofiler.get_hardware_data()
@@ -92,8 +82,8 @@ def main():
     print_data('UNIVERSAL ACCESS', universal_access)
     dev_tools = sysprofiler.get_dev_tools()
     print_data('DEVELOPER TOOLS', dev_tools)
-    # config_profile = sysprofiler.get_config_profile()
-    # print_data('CONFIGURATION PROFILE', config_profile)
+    config_profile = sysprofiler.get_config_profile()
+    print_data('CONFIGURATION PROFILE', config_profile)
     install_history = sysprofiler.get_install_history()
     print_data('INSTALL HISTORY', install_history)
 
