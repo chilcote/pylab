@@ -104,7 +104,7 @@ class Facts(object):
         self.facts['macaddress'] = self.get_macaddress(self.activenetwork)
         self.facts['model'] = self.get_model()
         self.facts['memory'] = self.get_memory()
-        self.facts['build'] = self.get_build()
+        self.facts['buildversion'] = self.get_buildversion()
         self.facts['cpucores'] = self.get_cpucores()
         self.facts['cpus'] = self.get_cpus()
         self.facts['uuid'] = self.get_uuid()
@@ -307,6 +307,7 @@ class Facts(object):
         return "No"
 
     def get_ssid(self):
+        '''Returns the SSID of the Wi-Fi interface'''
         return self.interface.ssid()        
 
     def get_serial(self):
@@ -317,17 +318,22 @@ class Facts(object):
         return stdout.strip()
 
     def get_activepower(self):
+        '''Returns the active power source
+        Battey or AC'''
         cmd = "/usr/bin/pmset -g | grep \* | /usr/bin/awk '{$NF=\"\"; print $0}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
         return stdout.strip()
 
     def get_batterycycles(self):
+        '''Returns the number of battery cycles'''
         cmd = "/usr/sbin/ioreg -r -c \"AppleSmartBattery\" | \
                                     /usr/bin/awk '/\"CycleCount\"/{print $3}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
         return stdout.strip()
 
     def get_batteryhealth(self):
+        '''Returns the battery health
+        Healthy or Failing'''
         cmd = "/usr/sbin/ioreg -r -c \"AppleSmartBattery\" | \
                             /usr/bin/awk '/PermanentFailureStatus/{print $3}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
@@ -336,16 +342,19 @@ class Facts(object):
         return "Failing"
 
     def get_batteryserial(self):
+        '''Returns the serial of the battery'''
         cmd = "/usr/sbin/ioreg -r -c \"AppleSmartBattery\" | /usr/bin/awk '/BatterySerialNumber/{NF;print $3}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
         return re.split('[\s"]+',stdout.strip())[1]
 
     def get_freespace(self):
+        '''Returns the free space on the boot drive'''
         cmd = "/usr/sbin/diskutil info / | /usr/bin/awk '/Free Space/{print $4}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
         return '%s GB' % stdout.strip()
 
     def get_bootcamp(self):
+        '''Returns whether a bootcamp volume is detected'''
         cmd = "/usr/sbin/diskutil list | grep -c \"Microsoft Basic Data\""
         (stdout, stderr, rc) = self.run_cmd(cmd)
         if int(stdout.strip()) == 0:
@@ -353,16 +362,19 @@ class Facts(object):
         return 'Yes'
 
     def get_filevault(self):
+        '''Returns whether filevault is enabled'''
         cmd = ['/usr/bin/fdesetup', 'status']
         (stdout, stderr, rc) = self.run_cmd(cmd)
         return stdout.strip()
 
     def get_gatekeeper(self):
+        '''Returns whether gatekeeper is enabled'''
         cmd = ['/usr/sbin/spctl', '--status']
         (stdout, stderr, rc) = self.run_cmd(cmd)
         return stdout.strip()
 
     def get_activenetwork(self):
+        '''Returns the active network interface of the Mac'''
         cmd = "netstat -rn | /usr/bin/awk  '/^default/{print $6;exit}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
         return stdout.strip()
@@ -391,7 +403,7 @@ class Facts(object):
         (stdout, stderr, rc) = self.run_cmd(cmd)
         return stdout.split(': ')[1].strip()
 
-    def get_build(self):
+    def get_buildversion(self):
         '''Returns the os build version of the Mac'''
         cmd = ['/usr/sbin/sysctl', 'kern.osversion']
         (stdout, stderr, rc) = self.run_cmd(cmd)
@@ -416,22 +428,26 @@ class Facts(object):
         return stdout.split(': ')[1].strip()
 
     def get_screenresolution(self):
+        '''Returns the screen resolution of the main screen'''
         width = NSScreen.mainScreen().frame().size.width
         height = NSScreen.mainScreen().frame().size.height
         return [width, height]
 
     def get_sus(self):
+        '''Returns the custom SUS if set'''
         sus = CFPreferencesCopyAppValue('CatalogURL', '/Library/Preferences/com.apple.SoftwareUpdate.plist')
         if not sus:
             return None
         return sus
 
     def get_javaversion(self):
+        '''Returns the java version on this Mac'''
         cmd = "java -version 2>&1 | /usr/bin/awk '/version/{print $3}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
         return re.split('[\s"]+',stdout.strip())[1]
 
     def get_remotelogin(self):
+        '''Returns whether remote login is activated'''
         if os.geteuid() == 0:
             cmd = "/usr/sbin/systemsetup -getremotelogin | /usr/bin/awk '{print $3}'"
             (stdout, stderr, rc) = self.run_cmd(cmd)
