@@ -60,9 +60,10 @@ class Facts(object):
         self.network_services = SCNetworkServiceCopyAll(self.prefs) 
         self.network_interfaces = SCNetworkInterfaceCopyAll()   
         self.wifi = CWInterface.interfaceNames()
-        self.activenetwork = self.get_activenetwork()       
-        for iname in self.wifi:
-            self.interface = CWInterface.interfaceWithName_(iname)      
+        self.activenetwork = self.get_activenetwork()
+        if self.wifi:
+            for iname in self.wifi:
+                self.interface = CWInterface.interfaceWithName_(iname)      
         if all:
             self.get_all()
 
@@ -104,6 +105,7 @@ class Facts(object):
         self.facts['macaddress'] = self.get_macaddress(self.activenetwork)
         self.facts['model'] = self.get_model()
         self.facts['memory'] = self.get_memory()
+        self.facts['memory_in_gigabytes'] = self.get_memory_gb()
         self.facts['buildversion'] = self.get_buildversion()
         self.facts['cpucores'] = self.get_cpucores()
         self.facts['cpus'] = self.get_cpus()
@@ -125,6 +127,10 @@ class Facts(object):
         self.facts['gatekeeperstatus'] = self.get_gatekeeper()
         self.facts['javaversion'] = self.get_javaversion()
         self.facts['remotelogin'] = self.get_remotelogin()
+        self.facts['is_virtual'] = self.get_is_virtual()
+        self.facts['board-id'] = self.get_board_id()
+        self.facts['is_64-bit_capable'] = self.get_is_64()
+        self.facts['firmware_version'] = self.get_firmware_version()
 
     def get_script(self):
         '''Returns the name of this script'''
@@ -220,7 +226,10 @@ class Facts(object):
 
     def get_editor(self):
         '''Returns the editor env of the current user'''
-        return os.environ['EDITOR']
+        try:
+            return os.environ['EDITOR']
+        except:
+            return False
 
     def get_pwd(self):
         '''Returns the pwd'''
@@ -286,7 +295,10 @@ class Facts(object):
     def get_wifiinterface(self):
         '''Returns the name of the Wi-Fi network interface'''
         interface = self.get_networkinfacelist()
-        return interface['Wi-Fi'][0]
+        try:
+            return interface['Wi-Fi'][0]
+        except KeyError:
+            return None
 
     # def get_wifiinterface(self):
     #   return self.interface.interfaceName()
@@ -294,21 +306,30 @@ class Facts(object):
     def get_wifimacaddress(self):
         '''Returns the MAC address of the Wi-Fi network interface'''
         interface = self.get_networkinfacelist()
-        return interface['Wi-Fi'][1]
+        try:
+            return interface['Wi-Fi'][1]
+        except KeyError:
+            return None
 
     # def get_wifimacaddress(self):
     #   return self.interface.hardwareAddress()
 
     def get_wifistatus(self):
         '''Returns the wifi status
-        Yes or No'''        
-        if self.interface.powerOn() == 1:
-            return "Yes"
-        return "No"
+        Yes or No'''
+        try:
+            if self.interface.powerOn() == 1:
+                return "Yes"
+            return "No"
+        except AttributeError:
+            return None
 
     def get_ssid(self):
         '''Returns the SSID of the Wi-Fi interface'''
-        return self.interface.ssid()        
+        try:
+            return self.interface.ssid()
+        except AttributeError:
+            return None
 
     def get_serial(self):
         '''Returns the serial number of the Mac'''
@@ -337,15 +358,21 @@ class Facts(object):
         cmd = "/usr/sbin/ioreg -r -c \"AppleSmartBattery\" | \
                             /usr/bin/awk '/PermanentFailureStatus/{print $3}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        if int(stdout.strip()) == 0:
-            return "Healthy"
-        return "Failing"
+        try:
+            if int(stdout.strip()) == 0:
+                return "Healthy"
+            return "Failing"
+        except ValueError:
+            return None
 
     def get_batteryserial(self):
         '''Returns the serial of the battery'''
         cmd = "/usr/sbin/ioreg -r -c \"AppleSmartBattery\" | /usr/bin/awk '/BatterySerialNumber/{NF;print $3}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        return re.split('[\s"]+',stdout.strip())[1]
+        try:
+            return re.split('[\s"]+',stdout.strip())[1]
+        except IndexError:
+            return None
 
     def get_freespace(self):
         '''Returns the free space on the boot drive'''
@@ -387,45 +414,58 @@ class Facts(object):
 
     def get_model(self):
         '''Returns the hardware model of the Mac'''
-        cmd = ['/usr/sbin/sysctl', 'hw.model']
+        cmd = ['/usr/sbin/sysctl', '-n', 'hw.model']
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.split(' ')[1].strip()
+        return stdout.strip()
 
     def get_memory(self):
-        '''Returns the memory in GBs of the Mac'''
-        cmd = ['/usr/sbin/sysctl', 'hw.memsize']
+        '''Returns the memory in bytes of the Mac'''
+        cmd = ['/usr/sbin/sysctl', '-n', 'hw.memsize']
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        return int(stdout.split(' ')[1].strip())/1024/1024/1024
+        return int(stdout.strip())
+
+    def get_memory_gb(self):
+        '''Returns the memory in GBs of the Mac'''
+        mem = self.get_memory()
+        return mem/1024/1024/1024
 
     def get_processor(self):
         '''Returns the processor model of the Mac'''
-        cmd = ['/usr/sbin/sysctl', 'machdep.cpu.brand_string']
+        cmd = ['/usr/sbin/sysctl', '-n', 'machdep.cpu.brand_string']
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.split(': ')[1].strip()
+        return stdout.strip()
+
+    def get_is_64(self):
+        '''Returns whether the Mac is 64-bit capable'''
+        cmd = ['/usr/sbin/sysctl', '-n', 'hw.cpu64bit_capable']
+        (stdout, stderr, rc) = self.run_cmd(cmd)
+        if stdout:
+            return True
+        return False
 
     def get_buildversion(self):
         '''Returns the os build version of the Mac'''
-        cmd = ['/usr/sbin/sysctl', 'kern.osversion']
+        cmd = ['/usr/sbin/sysctl', '-n', 'kern.osversion']
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.split(': ')[1].strip()
+        return stdout.strip()
     
     def get_cpucores(self):
         '''Returns how many CPU cores on the Mac'''
-        cmd = ['/usr/sbin/sysctl', 'hw.ncpu']
+        cmd = ['/usr/sbin/sysctl', '-n', 'hw.ncpu']
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.split(': ')[1].strip()
+        return stdout.strip()
 
     def get_cpus(self):
         '''Returns how many CPUs on the Mac'''
-        cmd = ['/usr/sbin/sysctl', 'hw.physicalcpu']
+        cmd = ['/usr/sbin/sysctl', '-n', 'hw.physicalcpu']
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.split(': ')[1].strip()        
+        return stdout.strip()        
 
     def get_uuid(self):
         '''Returns the UUID of the Mac'''
-        cmd = ['/usr/sbin/sysctl', 'kern.uuid']
+        cmd = ['/usr/sbin/sysctl', '-n', 'kern.uuid']
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.split(': ')[1].strip()
+        return stdout.strip()
 
     def get_screenresolution(self):
         '''Returns the screen resolution of the main screen'''
@@ -444,7 +484,10 @@ class Facts(object):
         '''Returns the java version on this Mac'''
         cmd = "java -version 2>&1 | /usr/bin/awk '/version/{print $3}'"
         (stdout, stderr, rc) = self.run_cmd(cmd)
-        return re.split('[\s"]+',stdout.strip())[1]
+        try:
+            return re.split('[\s"]+',stdout.strip())[1]
+        except IndexError:
+            return None
 
     def get_remotelogin(self):
         '''Returns whether remote login is activated'''
@@ -453,6 +496,43 @@ class Facts(object):
             (stdout, stderr, rc) = self.run_cmd(cmd)
             return stdout.strip()
         return "run as root to check this setting"
+
+    def get_is_virtual(self):
+        '''Returns whether the Mac is a virtual machine'''
+        cmd = ['/usr/sbin/sysctl', '-n', 'machdep.cpu.features']
+        (stdout, stderr, rc) = self.run_cmd(cmd)
+        if 'VMM' in stdout:
+            return True
+        return False
+
+    def get_board_id(self):
+        '''Returns the board-id of the Mac
+        Ref: https://github.com/hjuutilainen/adminscripts/blob/master/check-mavericks-compatibility.py'''
+        cmd = ['/usr/sbin/ioreg', '-p', 'IODeviceTree', '-r', '-n', '/', '-d', '1']
+        (stdout, stderr, rc) = self.run_cmd(cmd)
+        for line in stdout.splitlines():
+            if 'board-id' in line:
+                return re.sub(r"^\s*\"board-id\" = <\"(.*)\">$", r"\1", line)
+
+    def get_firmware_version(self):
+        '''Returns a dict of the firmware version of the Mac
+        Ref: https://github.com/hjuutilainen/adminscripts/blob/master/check-mavericks-compatibility.py'''
+        d = {}
+        cmd = ['/usr/sbin/ioreg', '-p', 'IOService',
+                '-n', 'AppleAHCIDiskDriver',
+                '-r',
+                '-l',
+                '-d', '1',
+                '-w', '0']
+        (stdout, stderr, rc) = self.run_cmd(cmd)
+        disk_dict = {}
+        for line in stdout.splitlines():
+            m = re.match(r"^\s*\"(?P<key>.*)\" = \"(?P<value>.*)\"$", line)
+            if m:
+                disk_dict[m.group('key')] = m.group('value').strip()
+        model = disk_dict.get('Model', '')
+        revision = disk_dict.get('Revision', '')
+        return model, revision
 
     def get(self, key):
         '''Returns a single fact for interactive mode'''
