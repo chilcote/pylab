@@ -40,11 +40,10 @@ def set_screen_resolution(mode, display):
 
 	# this is the part I need to figure out
 	# Need to pass the correct mode (1024 x 768 @ 60)
-
 	err = Quartz.CGConfigureDisplayWithDisplayMode(config_ref, mode, display, None)
 	if err:
-		print >> sys.stderr, "Error configuring displays: %s" % err
-		exit(-1)	
+		print >> sys.stderr, "Error with CGConfigureDisplayWithDisplayMode: %s" % err
+		exit(-1)
 
 	err = Quartz.CGCompleteDisplayConfiguration(config_ref, Quartz.kCGConfigurePermanently)
 	if err:
@@ -57,13 +56,14 @@ def main():
 	active_displays = get_active_displays()
 	mode_list = get_display_modes(display)
 
-	# set_screen_resolution(mode, display)
-
-	for mode in mode_list:
-		print mode
 	print 'Main Display: %s' % display
 	print 'Active Displays: %s' % active_displays[0]
 	print 'Resolution: %s, %s' % screensize
+
+	# for mode in mode_list:
+	# 	print mode
+
+	# set_screen_resolution(mode, display)
 
 if __name__ == '__main__':
     main()
