@@ -471,7 +471,7 @@ class Facts(object):
         '''Returns the screen resolution of the main screen'''
         width = NSScreen.mainScreen().frame().size.width
         height = NSScreen.mainScreen().frame().size.height
-        return [width, height]
+        return width, height
 
     def get_sus(self):
         '''Returns the custom SUS if set'''
