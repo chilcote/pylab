@@ -33,6 +33,8 @@ import socket
 import platform
 import sysconfig
 import subprocess
+from urllib import urlopen
+import json
 from AppKit import NSScreen
 from CoreFoundation import CFPreferencesCopyAppValue
 from SystemConfiguration import *
@@ -99,6 +101,7 @@ class Facts(object):
         self.facts['gid'] = self.get_gid()
         self.facts['groups'] = self.get_groups()
         self.facts['ip'] = self.get_ip(self.get_hostname())
+        self.facts['external_ip'] = self.get_external_ip()        
         self.facts['networkinterfaces'] = self.get_networkinfacelist()
         self.facts['networkservices'] = self.get_networkservicelist()
         self.facts['wifiinterface'] = self.get_wifiinterface()
@@ -138,7 +141,8 @@ class Facts(object):
     
     def get_hostname(self):
         '''Returns the hostname of this Mac'''
-        hostname = SCDynamicStoreCopyComputerName(None, None)[0]
+        hostname = SCDynamicStoreCopyLocalHostName(None)
+        #hostname = SCDynamicStoreCopyComputerName(None, None)[0]
         #hostname = socket.gethostname()
         if not '.' in hostname:
             return hostname + '.local'
@@ -274,6 +278,11 @@ class Facts(object):
     def get_ip(self, hostname):
         '''Returns the IP address of the Mac'''
         return socket.gethostbyname(hostname)
+
+    def get_external_ip(self):
+        url = 'http://api.hostip.info/get_json.php'
+        info = json.loads(urlopen(url).read().decode('utf-8'))
+        return info['ip']        
 
     def get_networkservicelist(self):
         '''Returns a list of all network interface names'''
