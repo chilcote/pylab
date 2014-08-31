@@ -128,6 +128,8 @@ def main():
     p = du.get_partitions()
     for k, v in sorted(p.items()):
         print '%s: %s' % (k, v)
+    print du.get_alldisks()
+    print du.get_wholedisks()
 
 if __name__ == "__main__":
     main()
