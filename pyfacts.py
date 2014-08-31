@@ -35,6 +35,7 @@ import sysconfig
 import subprocess
 from urllib import urlopen
 import json
+from collections import Counter
 from AppKit import NSScreen
 from CoreFoundation import CFPreferencesCopyAppValue
 from SystemConfiguration import *
@@ -82,6 +83,7 @@ class Facts(object):
         self.facts['processor'] = self.get_processor()
         self.facts['platform'] = self.get_platform()
         self.facts['id'] = self.get_id()
+        self.facts['user'] = self.get_user()
         self.facts['uname'] = self.get_uname()
         self.facts['sysinfo'] = self.get_sysinfo()
         self.facts['homedir'] = self.get_home()
@@ -184,7 +186,18 @@ class Facts(object):
     def get_id(self):
         '''Returns the current console user on this Mac'''
         return SCDynamicStoreCopyConsoleUser(None, None, None)[0]
-        #return os.getlogin() 
+        #return os.getlogin()
+
+    def get_user(self):
+        script = ['/usr/bin/last']
+        users = []
+        get_last = subprocess.check_output(script)
+        for line in get_last.splitlines():
+            if line != '':
+                name = line.split()
+                users.append(name[0])
+        users = Counter(users).most_common() 
+        return users[0][0]
 
     def get_uname(self):
         '''Returns the full uname of this Mac as a tuple'''
