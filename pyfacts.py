@@ -106,6 +106,7 @@ class Facts(object):
         self.facts['external_ip'] = self.get_external_ip()        
         self.facts['networkinterfaces'] = self.get_networkinfacelist()
         self.facts['networkservices'] = self.get_networkservicelist()
+        self.facts['searchdomains'] = self.get_searchdomains(self.get_networkservicelist())
         self.facts['wifiinterface'] = self.get_wifiinterface()
         self.facts['macaddress'] = self.get_macaddress(self.activenetwork)
         self.facts['model'] = self.get_model()
@@ -302,6 +303,21 @@ class Facts(object):
         d = {}  
         for service in self.network_services:
             d[SCNetworkServiceGetName(service)] = SCNetworkServiceGetEnabled(service)
+        return d
+    
+    def get_searchdomains(self, interfaces):        
+        '''Returns a list of search domains'''
+        d = {}
+        for interface in interfaces.items():
+            if 'Ethernet' in interface[0] or 'Wi-Fi' in interface[0]:
+                cmd = ['/usr/sbin/networksetup', '-getsearchdomains', 
+                        interface[0]]
+                output = subprocess.check_output(cmd)
+                l = []
+                for domain in output.splitlines():
+                    if not 'There aren\'t' in domain:
+                        l.append(domain)
+                d[interface[0]] = l
         return d
 
     def get_networkinfacelist(self):
