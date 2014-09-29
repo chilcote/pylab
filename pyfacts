@@ -140,6 +140,7 @@ class Facts(object):
         self.facts['is_64-bit_capable'] = self.get_is_64()
         self.facts['firmware_version'] = self.get_firmware_version()
         self.facts['cidr'] = self.get_cidr()
+        self.facts['bootvolume'] = self.get_bootvolume()
 
     def get_script(self):
         '''Returns the name of this script'''
@@ -670,6 +671,7 @@ class Facts(object):
         return model, revision
 
     def get_cidr(self):
+        '''Returns the cidr of the current network'''
         ip = self.get_ip()
         output = subprocess.check_output(['/sbin/ifconfig', 'en0'])
         for line in output.splitlines():
@@ -680,8 +682,15 @@ class Facts(object):
         count+=int(netmask.count('e')) * 3
         count+=int(netmask.count('c')) * 2
         count+=int(netmask.count('8')) * 1
-        return '%s.%s/%s' % ('.'.join(ip.split('.')[0:3]), '0', count)        
+        return '%s.%s/%s' % ('.'.join(ip.split('.')[0:3]), '0', count)
 
+    def get_bootvolume(self):
+        '''Returns the boot volume name'''
+        output = subprocess.check_output(['/usr/sbin/diskutil', 'info', 
+                                        '-plist', '/'])
+        xml = plistlib.readPlistFromString(output)
+        return xml['MediaName']
+        
     def get(self, key):
         '''Returns a single fact for interactive mode'''
         try:
