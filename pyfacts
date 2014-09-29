@@ -479,7 +479,7 @@ class Facts(object):
         output = subprocess.check_output(['/usr/bin/pmset', '-g'])
         for line in output.splitlines():
             if '*' in line:
-                return line.split('  ')[0]
+                return line.split(' ')[0]
 
     def get_batterycycles(self):
         '''Returns the number of battery cycles'''
@@ -543,7 +543,7 @@ class Facts(object):
         '''Returns the active network interface of the Mac'''
         output = subprocess.check_output(['/usr/sbin/netstat', '-rn'])
         for line in output.splitlines():
-            if 'default' in line:
+            if 'default' in line and not 'utun' in line:
                 return line.split('     ')[-1].strip()
 
     def get_macaddress(self):
@@ -694,14 +694,14 @@ class Facts(object):
         return xml['MediaName']
 
     def get_recoveryhd(self):
-        '''Returns the boot volume name'''
+        '''Returns the recovery hd device name'''
         output = subprocess.check_output(['/usr/sbin/diskutil', 'info', 
                                         '-plist', '/'])
         xml = plistlib.readPlistFromString(output)
         return xml['RecoveryDeviceIdentifier']
 
     def get_volumeuuid(self):
-        '''Returns the boot volume name'''
+        '''Returns the boot volume uuid'''
         output = subprocess.check_output(['/usr/sbin/diskutil', 'info', 
                                         '-plist', '/'])
         xml = plistlib.readPlistFromString(output)
