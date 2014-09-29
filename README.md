@@ -18,9 +18,9 @@ Run with no arguments to return all facts:
 
 	./pyfacts.py
 
-Use the help argument to see all available keys:
+Use the list argument to see all available keys:
 
-	./pyfacts.py -h
+	./pyfacts.py -l
 
 Module
 ------

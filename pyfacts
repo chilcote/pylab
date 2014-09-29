@@ -6,7 +6,7 @@ This script returns all or specified facts about your Mac.
 Requirements
 ------------
 + OS X 10.9.x
-+ python 2.7 
++ python 2.7
 
 '''
 
@@ -15,7 +15,7 @@ Requirements
 # 
 #  Licensed under the Apache License, Version 2.0 (the "License"); you may not
 #  use this file except in compliance with the License. You may obtain a copy
-#  of the License at  
+#  of the License at
 # 
 #       http://www.apache.org/licenses/LICENSE-2.0
 # 
@@ -33,6 +33,8 @@ import socket
 import platform
 import sysconfig
 import subprocess
+import argparse
+import plistlib
 from urllib import urlopen
 import json
 from collections import Counter
@@ -41,9 +43,9 @@ from CoreFoundation import CFPreferencesCopyAppValue
 from SystemConfiguration import *
 import objc
 
-objc.loadBundle('CoreWLAN', 
-                bundle_path='/System/Library/Frameworks/CoreWLAN.framework', 
-                module_globals=globals()) 
+objc.loadBundle('CoreWLAN',
+                bundle_path='/System/Library/Frameworks/CoreWLAN.framework',
+                module_globals=globals())
 
 class Facts(object):
     '''
@@ -61,12 +63,12 @@ class Facts(object):
         self.facts = {}
         self.prefs = SCPreferencesCreate(None, 'foo', None)
         self.network_services = SCNetworkServiceCopyAll(self.prefs) 
-        self.network_interfaces = SCNetworkInterfaceCopyAll()   
+        self.network_interfaces = SCNetworkInterfaceCopyAll()
         self.wifi = CWInterface.interfaceNames()
         self.activenetwork = self.get_activenetwork()
         if self.wifi:
             for iname in self.wifi:
-                self.interface = CWInterface.interfaceWithName_(iname)      
+                self.interface = CWInterface.interfaceWithName_(iname)
         if all:
             self.get_all()
 
@@ -86,7 +88,7 @@ class Facts(object):
         self.facts['user'] = self.get_user()
         self.facts['uname'] = self.get_uname()
         self.facts['sysinfo'] = self.get_sysinfo()
-        self.facts['homedir'] = self.get_home()
+        self.facts['homedir'] = self.get_homedir()
         self.facts['prompt'] = self.get_prompt()
         self.facts['path'] = self.get_path()
         self.facts['term'] = self.get_term()
@@ -102,17 +104,16 @@ class Facts(object):
         self.facts['egid'] = self.get_egid()
         self.facts['gid'] = self.get_gid()
         self.facts['groups'] = self.get_groups()
-        self.facts['ip'] = self.get_ip(self.get_hostname())
-        self.facts['external_ip'] = self.get_external_ip()        
+        self.facts['ip'] = self.get_ip()
+        self.facts['external_ip'] = self.get_external_ip()
         self.facts['networkinterfaces'] = self.get_networkinfacelist()
-        self.facts['networkservices'] = self.get_networkservicelist()
-        self.facts['searchdomains'] = self.get_searchdomains(self.get_networkservicelist())
-        self.facts['dnsservers'] = self.get_dnsservers(self.get_networkservicelist())
+        self.facts['networkservices'] = self.get_networkservices()
+        self.facts['searchdomains'] = self.get_searchdomains()
+        self.facts['dnsservers'] = self.get_dnsservers()
         self.facts['wifiinterface'] = self.get_wifiinterface()
-        self.facts['macaddress'] = self.get_macaddress(self.activenetwork)
+        self.facts['macaddress'] = self.get_macaddress()
         self.facts['model'] = self.get_model()
         self.facts['memory'] = self.get_memory()
-        self.facts['memory_in_gigabytes'] = self.get_memory_gb()
         self.facts['buildversion'] = self.get_buildversion()
         self.facts['cpucores'] = self.get_cpucores()
         self.facts['cpus'] = self.get_cpus()
@@ -130,8 +131,8 @@ class Facts(object):
         self.facts['sus'] = self.get_sus()
         self.facts['freespace'] = self.get_freespace()
         self.facts['bootcamp'] = self.get_bootcamp()
-        self.facts['filevaultstatus'] = self.get_filevault()
-        self.facts['gatekeeperstatus'] = self.get_gatekeeper()
+        self.facts['filevaultstatus'] = self.get_filevalutstatus()
+        self.facts['gatekeeperstatus'] = self.get_gatekeeperstatus()
         self.facts['javaversion'] = self.get_javaversion()
         self.facts['remotelogin'] = self.get_remotelogin()
         self.facts['is_virtual'] = self.get_is_virtual()
@@ -141,54 +142,87 @@ class Facts(object):
 
     def get_script(self):
         '''Returns the name of this script'''
-        return sys.argv[0]
+        try:
+            return sys.argv[0]
+        except:
+            return None
     
     def get_hostname(self):
-        '''Returns the hostname of this Mac'''
-        hostname = SCDynamicStoreCopyLocalHostName(None)
-        #hostname = SCDynamicStoreCopyComputerName(None, None)[0]
-        #hostname = socket.gethostname()
-        if not '.' in hostname:
-            return hostname + '.local'
-        return hostname
+        '''Returns the hostname of this Mac
+        if it is not a FQDN, we will append .local'''
+        # hostname = platform.node()
+        ## Using SystemConfiguration:
+        # hostname = SCDynamicStoreCopyComputerName(None, None)[0]
+        # hostname = SCDynamicStoreCopyLocalHostName(None)
+        try:
+            hostname = socket.gethostname()
+            if not '.' in hostname:
+                return hostname + '.local'
+            return hostname
+        except:
+            return None
 
     def get_kernelversion(self):
         '''Returns the darwin version of this Mac
         example: 13.1.0'''
-        return platform.release()
+        try:
+            return platform.release()
+        except:
+            return None
 
     def get_productversion(self):
         '''Returns the os x version of this Mac
         example: 10.9.2'''
-        return platform.mac_ver()[0]
+        try:
+            return platform.mac_ver()[0]
+        except:
+            return None
 
     def get_productversionmajor(self):
         '''Returns the major os x version of this Mac'''
-        return platform.mac_ver()[0].split('.')[0] + '.' + \
-                                    platform.mac_ver()[0].split('.')[1]
+        try:
+            return '.'.join(platform.mac_ver()[0].split('.')[0:2])
+        except:
+            return None
 
     def get_productversionminor(self):
         '''Returns the minor os x version of this Mac'''
-        return platform.mac_ver()[0].split('.')[-1]
+        try:
+            return platform.mac_ver()[0].split('.')[-1]
+        except:
+            return None
 
     def get_pythonversion(self):
         '''Returns the python version on this Mac'''
-        return platform.python_version()
+        try:
+            return platform.python_version()
+        except:
+            return None
 
     def get_architecture(self):
         '''Returns the architecture of this Mac
         example: x86_64'''
-        return platform.machine()
+        try:
+            return platform.machine()
+        except:
+            return None
 
     def get_platform(self):
         '''Returns the processor type of this Mac
         exxample: darwin'''
-        return sys.platform
+        try:
+            return sys.platform
+        except:
+            return None
 
     def get_id(self):
         '''Returns the current console user on this Mac'''
-        return SCDynamicStoreCopyConsoleUser(None, None, None)[0]
-        #return os.getlogin()
+        try:
+            return os.getlogin()
+        except:
+            return None
+        ## Using SystemConfiguration:
+        # return SCDynamicStoreCopyConsoleUser(None, None, None)[0]
 
     def get_user(self):
         script = ['/usr/bin/last']
@@ -198,20 +232,29 @@ class Facts(object):
             if line != '':
                 name = line.split()
                 users.append(name[0])
-        users = Counter(users).most_common() 
+        users = Counter(users).most_common()
         return users[0][0]
 
     def get_uname(self):
         '''Returns the full uname of this Mac as a tuple'''
-        return os.uname()
+        try:
+            return os.uname()
+        except:
+            return none
 
     def get_sysinfo(self):
         '''Returns the system info of this Mac'''
-        return os.uname()[3]
+        try:
+            return os.uname()[3]
+        except:
+            return None
 
-    def get_home(self):
+    def get_homedir(self):
         '''Returns the home directory of the current user'''
-        return os.environ['HOME']
+        try:
+            return os.environ['HOME']
+        except:
+            return None
 
     def get_prompt(self):
         '''Returns the prompt env of the current user'''
@@ -222,11 +265,17 @@ class Facts(object):
 
     def get_path(self):
         '''Returns the path env of the current user'''
-        return os.environ['PATH']
+        try:
+            return os.environ['PATH']
+        except:
+            return None
 
     def get_term(self):
         '''Returns the term env of the current user'''
-        return os.environ['TERM']
+        try:
+            return os.environ['TERM']
+        except:
+            return None
 
     def get_termprogram(self):
         '''Returns the term program env of the current user'''
@@ -237,7 +286,10 @@ class Facts(object):
 
     def get_shell(self):
         '''Returns the shell env of the current user'''
-        return os.environ['SHELL']
+        try:
+            return os.environ['SHELL']
+        except:
+            return None
 
     def get_pythoninterpreter(self):
         '''Returns the python interpreter on this Mac'''
@@ -248,7 +300,7 @@ class Facts(object):
         try:
             return os.environ['EDITOR']
         except:
-            return False
+            return None
 
     def get_pwd(self):
         '''Returns the pwd'''
@@ -266,74 +318,103 @@ class Facts(object):
 
     def get_cwd(self):
         '''Returns the cwd'''
-        return os.getcwd()
+        try:
+            return os.getcwd()
+        except:
+            return None
 
     def get_euid(self):
         '''Returns the euid of the current user'''
-        return os.geteuid()
+        try:
+            return os.geteuid()
+        except:
+            return None
 
     def get_uid(self):
         '''Returns the uid of the current user'''
-        return SCDynamicStoreCopyConsoleUser(None, None, None)[1]
-        #return os.getuid()
+        ## Using SystemConfiguration:
+        # return SCDynamicStoreCopyConsoleUser(None, None, None)[1]
+        try:
+            return os.getuid()
+        except:
+            return None
 
     def get_egid(self):
         '''Returns the egid of the current user'''
-        return os.getegid()
+        try:
+            return os.getegid()
+        except:
+            return None
 
     def get_gid(self):
         '''Returns the gid of the current user'''
-        return SCDynamicStoreCopyConsoleUser(None, None, None)[2]
-        #return os.getgid()
+        ## Using SystemConfiguration:
+        # return SCDynamicStoreCopyConsoleUser(None, None, None)[2]
+        try:
+            return os.getgid()
+        except:
+            return None
 
     def get_groups(self):
         '''Returns the groups of the current user'''
-        return os.getgroups()
+        try:
+            return os.getgroups()
+        except:
+            return None
 
-    def get_ip(self, hostname):
+    def get_ip(self):
         '''Returns the IP address of the Mac'''
-        return socket.gethostbyname(hostname)
+        hostname = self.get_hostname()
+        try:
+            return socket.gethostbyname(hostname)
+        except:
+            return None
 
     def get_external_ip(self):
         url = 'http://api.hostip.info/get_json.php'
-        info = json.loads(urlopen(url).read().decode('utf-8'))
-        return info['ip']        
+        try:
+            info = json.loads(urlopen(url).read().decode('utf-8'))
+            return info['ip']
+        except IOError as err:
+            return 'Cannot connect to %s: %s' % (url, err)
 
-    def get_networkservicelist(self):
+    def get_networkservices(self):
         '''Returns a list of all network interface names'''
-        d = {}  
+        l = []
         for service in self.network_services:
-            d[SCNetworkServiceGetName(service)] = SCNetworkServiceGetEnabled(service)
-        return d
+            l.append(SCNetworkServiceGetName(service))
+        return l
     
-    def get_searchdomains(self, interfaces):        
+    def get_searchdomains(self):
         '''Returns a list of search domains'''
+        interfaces = self.get_networkservices()
         d = {}
-        for interface in interfaces.items():
-            if 'Ethernet' in interface[0] or 'Wi-Fi' in interface[0]:
-                cmd = ['/usr/sbin/networksetup', '-getsearchdomains', 
-                        interface[0]]
+        for interface in interfaces:
+            if 'Ethernet' in interface or 'Wi-Fi' in interface:
+                cmd = ['/usr/sbin/networksetup', '-getsearchdomains',
+                        interface]
                 output = subprocess.check_output(cmd)
                 l = []
                 for domain in output.splitlines():
                     if not 'There aren\'t' in domain:
                         l.append(domain)
-                d[interface[0]] = l
+                d[interface] = l
         return d
 
-    def get_dnsservers(self, interfaces):        
+    def get_dnsservers(self):
         '''Returns a list of search domains'''
+        interfaces = self.get_networkservices()
         d = {}
-        for interface in interfaces.items():
-            if 'Ethernet' in interface[0] or 'Wi-Fi' in interface[0]:
-                cmd = ['/usr/sbin/networksetup', '-getdnsservers', 
-                        interface[0]]
+        for interface in interfaces:
+            if 'Ethernet' in interface or 'Wi-Fi' in interface:
+                cmd = ['/usr/sbin/networksetup', '-getdnsservers',
+                        interface]
                 output = subprocess.check_output(cmd)
                 l = []
                 for domain in output.splitlines():
                     if not 'There aren\'t' in domain:
                         l.append(domain)
-                d[interface[0]] = l
+                d[interface] = l
         return d
 
     def get_networkinfacelist(self):
@@ -354,9 +435,6 @@ class Facts(object):
         except KeyError:
             return None
 
-    # def get_wifiinterface(self):
-    #   return self.interface.interfaceName()
-
     def get_wifimacaddress(self):
         '''Returns the MAC address of the Wi-Fi network interface'''
         interface = self.get_networkinfacelist()
@@ -364,9 +442,6 @@ class Facts(object):
             return interface['Wi-Fi'][1]
         except KeyError:
             return None
-
-    # def get_wifimacaddress(self):
-    #   return self.interface.hardwareAddress()
 
     def get_wifistatus(self):
         '''Returns the wifi status
@@ -387,139 +462,141 @@ class Facts(object):
 
     def get_serial(self):
         '''Returns the serial number of the Mac'''
-        cmd = "/usr/sbin/ioreg -c \"IOPlatformExpertDevice\" | awk -F '\"' \
-                                    '/IOPlatformSerialNumber/ {print $4}'"
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/ioreg', '-c',
+                                        'IOPlatformExpertDevice', '-d', '2'])
+        for line in output.splitlines():
+            if 'IOPlatformSerialNumber' in line:
+                return line.split(' = ')[1].replace('\"','')
+        return None
 
     def get_activepower(self):
         '''Returns the active power source
         Battey or AC'''
-        cmd = "/usr/bin/pmset -g | grep \* | /usr/bin/awk '{$NF=\"\"; print $0}'"
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/bin/pmset', '-g'])
+        for line in output.splitlines():
+            if '*' in line:
+                return line.split('  ')[0]
 
     def get_batterycycles(self):
         '''Returns the number of battery cycles'''
-        cmd = "/usr/sbin/ioreg -r -c \"AppleSmartBattery\" | \
-                                    /usr/bin/awk '/\"CycleCount\"/{print $3}'"
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/ioreg', '-r', '-c',
+                                         'AppleSmartBattery'])
+        for line in output.splitlines():
+            if 'CycleCount' in line:
+                return line.split(' = ')[1]
 
     def get_batteryhealth(self):
         '''Returns the battery health
         Healthy or Failing'''
-        cmd = "/usr/sbin/ioreg -r -c \"AppleSmartBattery\" | \
-                            /usr/bin/awk '/PermanentFailureStatus/{print $3}'"
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        try:
-            if int(stdout.strip()) == 0:
-                return "Healthy"
-            return "Failing"
-        except ValueError:
-            return None
+        output = subprocess.check_output(['/usr/sbin/ioreg', '-r', '-c',
+                                        'AppleSmartBattery'])
+        for line in output.splitlines():
+            if 'PermanentFailureStatus' in line:
+                try:
+                    if int(line.split(' = ')[1]) == 0:
+                        return 'Healthy'
+                    return 'Failing'
+                except ValueError:
+                    return None
 
     def get_batteryserial(self):
         '''Returns the serial of the battery'''
-        cmd = "/usr/sbin/ioreg -r -c \"AppleSmartBattery\" | /usr/bin/awk '/BatterySerialNumber/{NF;print $3}'"
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        try:
-            return re.split('[\s"]+',stdout.strip())[1]
-        except IndexError:
-            return None
+        output = subprocess.check_output(['/usr/sbin/ioreg', '-r', '-c',
+                                                'AppleSmartBattery'])
+        for line in output.splitlines():
+            if 'BatterySerialNumber' in line:
+                try:
+                    return line.split(' = ')[1].replace('\"','')
+                except IndexError:
+                    return None
 
     def get_freespace(self):
         '''Returns the free space on the boot drive'''
-        cmd = "/usr/sbin/diskutil info / | /usr/bin/awk '/Free Space/{print $4}'"
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return '%s GB' % stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/diskutil', 'info', 
+                                        '-plist', '/'])
+        xml = plistlib.readPlistFromString(output)
+        return int(xml['FreeSpace']) / 1000 / 1000 / 1000
 
     def get_bootcamp(self):
         '''Returns whether a bootcamp volume is detected'''
-        cmd = "/usr/sbin/diskutil list | grep -c \"Microsoft Basic Data\""
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        if int(stdout.strip()) == 0:
+        output = subprocess.check_output(['/usr/sbin/diskutil', 'list'])
+        for line in output.splitlines():
+            if 'Microsoft Basic Data' in line:
+                return 'Yes'
             return 'No'
-        return 'Yes'
 
-    def get_filevault(self):
+    def get_filevalutstatus(self):
         '''Returns whether filevault is enabled'''
-        cmd = ['/usr/bin/fdesetup', 'status']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/bin/fdesetup', 'status'])
+        return output.strip()
 
-    def get_gatekeeper(self):
+    def get_gatekeeperstatus(self):
         '''Returns whether gatekeeper is enabled'''
-        cmd = ['/usr/sbin/spctl', '--status']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/spctl', '--status'])
+        return output.strip()
 
     def get_activenetwork(self):
         '''Returns the active network interface of the Mac'''
-        cmd = "netstat -rn | /usr/bin/awk  '/^default/{print $6;exit}'"
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/netstat', '-rn'])
+        for line in output.splitlines():
+            if 'default' in line:
+                return line.split('     ')[-1].strip()
 
-    def get_macaddress(self, interface):
+    def get_macaddress(self):
         '''Returns the MAC address of the current active network'''
-        cmd = ['/usr/sbin/networksetup', '-getmacaddress', interface]
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.split(' ')[2]
+        interface = self.activenetwork
+        output = subprocess.check_output(['/usr/sbin/networksetup',
+                                        '-getmacaddress', interface])
+        return output.split(' ')[2]
 
     def get_model(self):
         '''Returns the hardware model of the Mac'''
-        cmd = ['/usr/sbin/sysctl', '-n', 'hw.model']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/sysctl', '-n',
+                                            'hw.model'])
+        return output.strip()
 
     def get_memory(self):
         '''Returns the memory in bytes of the Mac'''
-        cmd = ['/usr/sbin/sysctl', '-n', 'hw.memsize']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return int(stdout.strip())
-
-    def get_memory_gb(self):
-        '''Returns the memory in GBs of the Mac'''
-        mem = self.get_memory()
-        return mem/1024/1024/1024
+        output = subprocess.check_output(['/usr/sbin/sysctl', '-n',
+                                            'hw.memsize'])
+        return int(output.strip())/1024/1024/1024
 
     def get_processor(self):
         '''Returns the processor model of the Mac'''
-        cmd = ['/usr/sbin/sysctl', '-n', 'machdep.cpu.brand_string']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/sysctl', '-n',
+                                        'machdep.cpu.brand_string'])
+        return output.strip()
 
     def get_is_64(self):
         '''Returns whether the Mac is 64-bit capable'''
-        cmd = ['/usr/sbin/sysctl', '-n', 'hw.cpu64bit_capable']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        if stdout:
+        output = subprocess.check_output(['/usr/sbin/sysctl', '-n',
+                                        'hw.cpu64bit_capable'])
+        if output:
             return True
         return False
 
     def get_buildversion(self):
         '''Returns the os build version of the Mac'''
-        cmd = ['/usr/sbin/sysctl', '-n', 'kern.osversion']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/sysctl', '-n',
+                                        'kern.osversion'])
+        return output.strip()
     
     def get_cpucores(self):
         '''Returns how many CPU cores on the Mac'''
-        cmd = ['/usr/sbin/sysctl', '-n', 'hw.ncpu']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/sysctl', '-n', 'hw.ncpu'])
+        return output.strip()
 
     def get_cpus(self):
         '''Returns how many CPUs on the Mac'''
-        cmd = ['/usr/sbin/sysctl', '-n', 'hw.physicalcpu']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()        
+        output = subprocess.check_output(['/usr/sbin/sysctl', '-n',
+                                        'hw.physicalcpu'])
+        return output.strip()
 
     def get_uuid(self):
         '''Returns the UUID of the Mac'''
-        cmd = ['/usr/sbin/sysctl', '-n', 'kern.uuid']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        return stdout.strip()
+        output = subprocess.check_output(['/usr/sbin/sysctl', '-n',
+                                        'kern.uuid'])
+        return output.strip()
 
     def get_screenresolution(self):
         '''Returns the screen resolution of the main screen'''
@@ -529,7 +606,8 @@ class Facts(object):
 
     def get_sus(self):
         '''Returns the custom SUS if set'''
-        sus = CFPreferencesCopyAppValue('CatalogURL', '/Library/Preferences/com.apple.SoftwareUpdate.plist')
+        sus = CFPreferencesCopyAppValue('CatalogURL',
+                        '/Library/Preferences/com.apple.SoftwareUpdate.plist')
         if not sus:
             return None
         return sus
@@ -537,7 +615,10 @@ class Facts(object):
     def get_javaversion(self):
         '''Returns the java version on this Mac'''
         cmd = "java -version 2>&1 | /usr/bin/awk '/version/{print $3}'"
-        (stdout, stderr, rc) = self.run_cmd(cmd)
+        task = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell = True)
+        (stdout, stderr) = task.communicate()
         try:
             return re.split('[\s"]+',stdout.strip())[1]
         except IndexError:
@@ -546,25 +627,25 @@ class Facts(object):
     def get_remotelogin(self):
         '''Returns whether remote login is activated'''
         if os.geteuid() == 0:
-            cmd = "/usr/sbin/systemsetup -getremotelogin | /usr/bin/awk '{print $3}'"
-            (stdout, stderr, rc) = self.run_cmd(cmd)
-            return stdout.strip()
+            output = subprocess.check_output(['/usr/sbin/systemsetup',
+                                            'getremotelogin'])
+            return output.split(': ')[1].strip()
         return "run as root to check this setting"
 
     def get_is_virtual(self):
         '''Returns whether the Mac is a virtual machine'''
-        cmd = ['/usr/sbin/sysctl', '-n', 'machdep.cpu.features']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        if 'VMM' in stdout:
+        output = subprocess.check_output(['/usr/sbin/sysctl', '-n',
+                                            'machdep.cpu.features'])
+        if 'VMM' in output:
             return True
         return False
 
     def get_board_id(self):
         '''Returns the board-id of the Mac
         Ref: https://github.com/hjuutilainen/adminscripts/blob/master/check-mavericks-compatibility.py'''
-        cmd = ['/usr/sbin/ioreg', '-p', 'IODeviceTree', '-r', '-n', '/', '-d', '1']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
-        for line in stdout.splitlines():
+        output = subprocess.check_output(['/usr/sbin/ioreg', '-p',
+                                'IODeviceTree', '-r', '-n', '/', '-d', '1'])
+        for line in output.splitlines():
             if 'board-id' in line:
                 return re.sub(r"^\s*\"board-id\" = <\"(.*)\">$", r"\1", line)
 
@@ -572,15 +653,14 @@ class Facts(object):
         '''Returns a dict of the firmware version of the Mac
         Ref: https://github.com/hjuutilainen/adminscripts/blob/master/check-mavericks-compatibility.py'''
         d = {}
-        cmd = ['/usr/sbin/ioreg', '-p', 'IOService',
+        output = subprocess.check_output(['/usr/sbin/ioreg', '-p', 'IOService',
                 '-n', 'AppleAHCIDiskDriver',
                 '-r',
                 '-l',
                 '-d', '1',
-                '-w', '0']
-        (stdout, stderr, rc) = self.run_cmd(cmd)
+                '-w', '0'])
         disk_dict = {}
-        for line in stdout.splitlines():
+        for line in output.splitlines():
             m = re.match(r"^\s*\"(?P<key>.*)\" = \"(?P<value>.*)\"$", line)
             if m:
                 disk_dict[m.group('key')] = m.group('value').strip()
@@ -602,7 +682,7 @@ class Facts(object):
             for k, v in sorted(self.facts.items()):
                 print "%s: %s" % (k, v)
         except KeyError:
-            print "Error: %s" % KeyError            
+            print "Error: %s" % KeyError
 
     def list_all(self):
         '''Lists all fact categories for interactive mode'''
@@ -610,38 +690,28 @@ class Facts(object):
             for k, v in sorted(self.facts.items()):
                 print "%s" % k
         except KeyError:
-            print "Error: %s" % KeyError        
-
-    def run_cmd(self, cmd):
-        """Runs a command and returns a tuple of stdout, stderr, returncode."""
-        if type(cmd) is str:
-            shell = True
-        else:
-            shell = False
-        task = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell = shell)
-        (stdout, stderr) = task.communicate()
-        return stdout, stderr, task.returncode
-
-def usage():
-    print 'Usage: ./pyfacts.py <key>'
+            print "Error: %s" % KeyError
 
 def main():
     '''Runs in interactive mode'''
-    if len(sys.argv) > 2:
-        usage()
-        sys.exit(0)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--list', help='list categories',
+                        action='store_true')
+    parser.add_argument('category', help='input category',
+                        nargs=argparse.REMAINDER)
+    
+    args = parser.parse_args()
+
     facts = Facts(all=True)
-    if len(sys.argv) == 1:
+    # facts = Facts()
+
+    if args.list:
+        facts.list_all()
+        sys.exit(0)
+    if args.category:
+        print facts.get(args.category[0])
+    else:
         facts.show_all()
-    elif len(sys.argv) == 2:
-        if sys.argv[1] == '-h' or sys.argv[1] == 'help':
-            usage()
-            print '\nCategories:\n----------'
-            facts.list_all()
-            sys.exit(0)
-        print facts.get(sys.argv[1])
 
 if __name__ == "__main__":
     main()
