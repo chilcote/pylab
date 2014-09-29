@@ -141,6 +141,8 @@ class Facts(object):
         self.facts['firmware_version'] = self.get_firmware_version()
         self.facts['cidr'] = self.get_cidr()
         self.facts['bootvolume'] = self.get_bootvolume()
+        self.facts['recoveryhd'] = self.get_recoveryhd()
+        self.facts['volumeuuid'] = self.get_volumeuuid()
 
     def get_script(self):
         '''Returns the name of this script'''
@@ -690,7 +692,21 @@ class Facts(object):
                                         '-plist', '/'])
         xml = plistlib.readPlistFromString(output)
         return xml['MediaName']
-        
+
+    def get_recoveryhd(self):
+        '''Returns the boot volume name'''
+        output = subprocess.check_output(['/usr/sbin/diskutil', 'info', 
+                                        '-plist', '/'])
+        xml = plistlib.readPlistFromString(output)
+        return xml['RecoveryDeviceIdentifier']
+
+    def get_volumeuuid(self):
+        '''Returns the boot volume name'''
+        output = subprocess.check_output(['/usr/sbin/diskutil', 'info', 
+                                        '-plist', '/'])
+        xml = plistlib.readPlistFromString(output)
+        return xml['VolumeUUID']
+
     def get(self, key):
         '''Returns a single fact for interactive mode'''
         try:
