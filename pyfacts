@@ -62,7 +62,7 @@ class Facts(object):
     def __init__(self, all=False):
         self.facts = {}
         self.prefs = SCPreferencesCreate(None, 'foo', None)
-        self.network_services = SCNetworkServiceCopyAll(self.prefs) 
+        self.network_services = SCNetworkServiceCopyAll(self.prefs)
         self.network_interfaces = SCNetworkInterfaceCopyAll()
         self.wifi = CWInterface.interfaceNames()
         self.activenetwork = self.get_activenetwork()
@@ -106,7 +106,7 @@ class Facts(object):
         self.facts['groups'] = self.get_groups()
         self.facts['ip'] = self.get_ip()
         self.facts['external_ip'] = self.get_external_ip()
-        self.facts['networkinterfaces'] = self.get_networkinfacelist()
+        self.facts['networkinterfaces'] = self.get_networkinterfacelist()
         self.facts['networkservices'] = self.get_networkservices()
         self.facts['searchdomains'] = self.get_searchdomains()
         self.facts['dnsservers'] = self.get_dnsservers()
@@ -421,9 +421,9 @@ class Facts(object):
                 d[interface] = l
         return d
 
-    def get_networkinfacelist(self):
+    def get_networkinterfacelist(self):
         '''Returns a list of all network interface names'''
-        d = {}  
+        d = {}
         for interface in self.network_interfaces:
             d[SCNetworkInterfaceGetLocalizedDisplayName(interface)] = (
                 SCNetworkInterfaceGetBSDName(interface),
@@ -433,7 +433,7 @@ class Facts(object):
 
     def get_wifiinterface(self):
         '''Returns the name of the Wi-Fi network interface'''
-        interface = self.get_networkinfacelist()
+        interface = self.get_networkinterfacelist()
         try:
             return interface['Wi-Fi'][0]
         except KeyError:
@@ -441,7 +441,7 @@ class Facts(object):
 
     def get_wifimacaddress(self):
         '''Returns the MAC address of the Wi-Fi network interface'''
-        interface = self.get_networkinfacelist()
+        interface = self.get_networkinterfacelist()
         try:
             return interface['Wi-Fi'][1]
         except KeyError:
@@ -674,6 +674,7 @@ class Facts(object):
 
     def get_cidr(self):
         '''Returns the cidr of the current network'''
+        netmask = ''
         ip = self.get_ip()
         output = subprocess.check_output(['/sbin/ifconfig', 'en0'])
         for line in output.splitlines():
