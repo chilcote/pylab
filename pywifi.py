@@ -5,6 +5,9 @@ This script returns values regarding the current wi-fi connection
 
 Documentation:
 https://developer.apple.com/library/mac/documentation/CoreWLAN/Reference/CWInterface_reference/translated_content/CWInterface.html
+
+objc framework import referenced from:
+http://stackoverflow.com/questions/12136817/how-do-you-use-pyobjc-to-turn-off-and-on-the-wireless-interfaces-of-a-mac
 '''
 
 ##############################################################################
