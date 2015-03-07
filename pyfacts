@@ -134,6 +134,7 @@ class Facts(object):
         self.facts['filevaultstatus'] = self.get_filevalutstatus()
         self.facts['gatekeeperstatus'] = self.get_gatekeeperstatus()
         self.facts['javaversion'] = self.get_javaversion()
+        self.facts['javavendor'] = self.get_javavendor()
         self.facts['remotelogin'] = self.get_remotelogin()
         self.facts['is_virtual'] = self.get_is_virtual()
         self.facts['board-id'] = self.get_board_id()
@@ -612,21 +613,19 @@ class Facts(object):
         '''Returns the custom SUS if set'''
         sus = CFPreferencesCopyAppValue('CatalogURL',
                         '/Library/Preferences/com.apple.SoftwareUpdate.plist')
-        if not sus:
-            return None
         return sus
 
     def get_javaversion(self):
-        '''Returns the java version on this Mac'''
-        cmd = "java -version 2>&1 | /usr/bin/awk '/version/{print $3}'"
-        task = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell = True)
-        (stdout, stderr) = task.communicate()
-        try:
-            return re.split('[\s"]+',stdout.strip())[1]
-        except IndexError:
-            return None
+        '''Returns the java plug-in version'''
+        plist = '/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Info.plist'
+        if os.path.exists(plist):
+            return CFPreferencesCopyAppValue('CFBundleVersion', plist)
+
+    def get_javavendor(self):
+        '''Returns the java vendor (apple or oracle)'''
+        plist = '/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Info.plist'
+        if os.path.exists(plist):
+            return CFPreferencesCopyAppValue('CFBundleIdentifier', plist).split('.')[1]
 
     def get_remotelogin(self):
         '''Returns whether remote login is activated'''
