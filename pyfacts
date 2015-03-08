@@ -40,7 +40,12 @@ import json
 from collections import Counter
 from AppKit import NSScreen
 from CoreFoundation import CFPreferencesCopyAppValue
-from SystemConfiguration import *
+# from SystemConfiguration import *
+from SystemConfiguration import SCPreferencesCreate, SCNetworkServiceCopyAll, \
+        SCNetworkInterfaceCopyAll, SCDynamicStoreCopyComputerName, \
+        SCDynamicStoreCopyLocalHostName, SCDynamicStoreCopyConsoleUser, \
+        SCNetworkInterfaceGetBSDName, SCNetworkInterfaceGetHardwareAddressString, \
+        SCNetworkInterfaceGetLocalizedDisplayName, SCNetworkServiceGetName
 import objc
 
 objc.loadBundle('CoreWLAN',
@@ -59,7 +64,7 @@ class Facts(object):
     print serial
     '''
 
-    def __init__(self, all=False):
+    def __init__(self):
         self.facts = {}
         self.prefs = SCPreferencesCreate(None, 'foo', None)
         self.network_services = SCNetworkServiceCopyAll(self.prefs)
@@ -69,81 +74,6 @@ class Facts(object):
         if self.wifi:
             for iname in self.wifi:
                 self.interface = CWInterface.interfaceWithName_(iname)
-        if all:
-            self.get_all()
-
-    def get_all(self):
-        '''Returns all facts for interactive mode'''
-        self.facts['script'] = self.get_script()
-        self.facts['hostname'] = self.get_hostname()
-        self.facts['kernelversion'] = self.get_kernelversion()
-        self.facts['productversion'] = self.get_productversion()
-        self.facts['productversionmajor'] = self.get_productversionmajor()
-        self.facts['productversionminor'] = self.get_productversionminor()
-        self.facts['pythonversion'] = self.get_pythonversion()
-        self.facts['architecture'] = self.get_architecture()
-        self.facts['processor'] = self.get_processor()
-        self.facts['platform'] = self.get_platform()
-        self.facts['id'] = self.get_id()
-        self.facts['user'] = self.get_user()
-        self.facts['uname'] = self.get_uname()
-        self.facts['sysinfo'] = self.get_sysinfo()
-        self.facts['homedir'] = self.get_homedir()
-        self.facts['prompt'] = self.get_prompt()
-        self.facts['path'] = self.get_path()
-        self.facts['term'] = self.get_term()
-        self.facts['term_program'] = self.get_termprogram()
-        self.facts['shell'] = self.get_shell()
-        self.facts['python_interpreter'] = self.get_pythoninterpreter()
-        self.facts['editor'] = self.get_editor()
-        self.facts['pwd'] = self.get_pwd()
-        self.facts['tmpdir'] = self.get_tmpdir()
-        self.facts['cwd'] = self.get_cwd()
-        self.facts['euid'] = self.get_euid()
-        self.facts['uid'] = self.get_uid()
-        self.facts['egid'] = self.get_egid()
-        self.facts['gid'] = self.get_gid()
-        self.facts['groups'] = self.get_groups()
-        self.facts['ip'] = self.get_ip()
-        self.facts['external_ip'] = self.get_external_ip()
-        self.facts['networkinterfaces'] = self.get_networkinterfacelist()
-        self.facts['networkservices'] = self.get_networkservices()
-        self.facts['searchdomains'] = self.get_searchdomains()
-        self.facts['dnsservers'] = self.get_dnsservers()
-        self.facts['wifiinterface'] = self.get_wifiinterface()
-        self.facts['macaddress'] = self.get_macaddress()
-        self.facts['model'] = self.get_model()
-        self.facts['memory'] = self.get_memory()
-        self.facts['buildversion'] = self.get_buildversion()
-        self.facts['cpucores'] = self.get_cpucores()
-        self.facts['cpus'] = self.get_cpus()
-        self.facts['uuid'] = self.get_uuid()
-        self.facts['serial'] = self.get_serial()
-        self.facts['ssid'] = self.get_ssid()
-        self.facts['wifistatus'] = self.get_wifistatus()
-        self.facts['wifimacaddress'] = self.get_wifimacaddress()
-        self.facts['activenetwork'] = self.get_activenetwork()
-        self.facts['activepower'] = self.get_activepower()
-        self.facts['batterycycles'] = self.get_batterycycles()
-        self.facts['batteryhealth'] = self.get_batteryhealth()
-        self.facts['batteryserial'] = self.get_batteryserial()
-        self.facts['screenresolution'] = self.get_screenresolution()
-        self.facts['sus'] = self.get_sus()
-        self.facts['freespace'] = self.get_freespace()
-        self.facts['bootcamp'] = self.get_bootcamp()
-        self.facts['filevaultstatus'] = self.get_filevalutstatus()
-        self.facts['gatekeeperstatus'] = self.get_gatekeeperstatus()
-        self.facts['javaversion'] = self.get_javaversion()
-        self.facts['javavendor'] = self.get_javavendor()
-        self.facts['remotelogin'] = self.get_remotelogin()
-        self.facts['is_virtual'] = self.get_is_virtual()
-        self.facts['board-id'] = self.get_board_id()
-        self.facts['is_64-bit_capable'] = self.get_is_64()
-        self.facts['firmware_version'] = self.get_firmware_version()
-        self.facts['cidr'] = self.get_cidr()
-        self.facts['bootvolume'] = self.get_bootvolume()
-        self.facts['recoveryhd'] = self.get_recoveryhd()
-        self.facts['volumeuuid'] = self.get_volumeuuid()
 
     def get_script(self):
         '''Returns the name of this script'''
@@ -545,7 +475,7 @@ class Facts(object):
         output = subprocess.check_output(['/usr/sbin/netstat', '-rn'])
         for line in output.splitlines():
             if 'default' in line and not 'utun' in line:
-                return line.split('     ')[-1].strip()
+                return line.split(' ')[-1].strip()
 
     def get_macaddress(self):
         '''Returns the MAC address of the current active network'''
@@ -707,30 +637,6 @@ class Facts(object):
         xml = plistlib.readPlistFromString(output)
         return xml['VolumeUUID']
 
-    def get(self, key):
-        '''Returns a single fact for interactive mode'''
-        try:
-            return self.facts[key]
-        except KeyError:
-            print 'Error: key not found'
-            sys.exit(1)
-
-    def show_all(self):
-        '''Returns all facts for interactive mode'''
-        try:
-            for k, v in sorted(self.facts.items()):
-                print "%s: %s" % (k, v)
-        except KeyError:
-            print "Error: %s" % KeyError
-
-    def list_all(self):
-        '''Lists all fact categories for interactive mode'''
-        try:
-            for k, v in sorted(self.facts.items()):
-                print "%s" % k
-        except KeyError:
-            print "Error: %s" % KeyError
-
 def main():
     '''Runs in interactive mode'''
     parser = argparse.ArgumentParser()
@@ -741,16 +647,24 @@ def main():
     
     args = parser.parse_args()
 
-    facts = Facts(all=True)
-    # facts = Facts()
+    facts = Facts()
+    l = []
+    for k, v in Facts.__dict__.items():
+        if callable(v):
+            l.append(k.replace('get_', ''))
+    l.remove('__init__')
 
     if args.list:
-        facts.list_all()
-        sys.exit(0)
-    if args.category:
-        print facts.get(args.category[0])
+        for i in sorted(l):
+            print i
+    elif args.category:
+        print getattr(facts, 'get_' + args.category[0])()
     else:
-        facts.show_all()
+        d = {}
+        for i in sorted(l):
+            d[i] = getattr(facts, 'get_' + i)()
+        for k, v in d.items():
+            print '%s => %s' % (k, v)
 
 if __name__ == "__main__":
     main()
