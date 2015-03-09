@@ -397,12 +397,14 @@ class Facts(object):
 
     def get_serial(self):
         '''Returns the serial number of the Mac'''
-        output = subprocess.check_output(['/usr/sbin/ioreg', '-c',
-                                        'IOPlatformExpertDevice', '-d', '2'])
-        for line in output.splitlines():
-            if 'IOPlatformSerialNumber' in line:
-                return line.split(' = ')[1].replace('\"','')
-        return None
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-c',
+                                        'IOPlatformExpertDevice',
+                                        '-d',
+                                        '2',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)
+        return d['IORegistryEntryChildren'][0]['IOPlatformSerialNumber']
 
     def get_activepower(self):
         '''Returns the active power source
@@ -414,41 +416,44 @@ class Facts(object):
 
     def get_batterycycles(self):
         '''Returns the number of battery cycles'''
-        output = subprocess.check_output(['/usr/sbin/ioreg', '-r', '-c',
-                                         'AppleSmartBattery'])
-        for line in output.splitlines():
-            if 'CycleCount' in line:
-                return line.split(' = ')[1]
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-r',
+                                        '-c',
+                                        'AppleSmartBattery',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)[0]
+        return d['CycleCount']
 
     def get_batteryhealth(self):
         '''Returns the battery health
         Healthy or Failing'''
-        output = subprocess.check_output(['/usr/sbin/ioreg', '-r', '-c',
-                                        'AppleSmartBattery'])
-        for line in output.splitlines():
-            if 'PermanentFailureStatus' in line:
-                try:
-                    if int(line.split(' = ')[1]) == 0:
-                        return 'Healthy'
-                    return 'Failing'
-                except ValueError:
-                    return None
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-r',
+                                        '-c',
+                                        'AppleSmartBattery',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)[0]
+        if not d['PermanentFailureStatus']:
+            return 'Healthy'
+        else:
+            return 'Failing'
 
     def get_batteryserial(self):
         '''Returns the serial of the battery'''
-        output = subprocess.check_output(['/usr/sbin/ioreg', '-r', '-c',
-                                                'AppleSmartBattery'])
-        for line in output.splitlines():
-            if 'BatterySerialNumber' in line:
-                try:
-                    return line.split(' = ')[1].replace('\"','')
-                except IndexError:
-                    return None
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-r',
+                                        '-c',
+                                        'AppleSmartBattery',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)[0]
+        return d['BatterySerialNumber']
 
     def get_freespace(self):
         '''Returns the free space on the boot drive'''
-        output = subprocess.check_output(['/usr/sbin/diskutil', 'info', 
-                                        '-plist', '/'])
+        output = subprocess.check_output(['/usr/sbin/diskutil',
+                                        'info',
+                                        '-plist',
+                                        '/'])
         xml = plistlib.readPlistFromString(output)
         return int(xml['FreeSpace']) / 1000 / 1000 / 1000
 
@@ -576,30 +581,59 @@ class Facts(object):
     def get_board_id(self):
         '''Returns the board-id of the Mac
         Ref: https://github.com/hjuutilainen/adminscripts/blob/master/check-mavericks-compatibility.py'''
-        output = subprocess.check_output(['/usr/sbin/ioreg', '-p',
-                                'IODeviceTree', '-r', '-n', '/', '-d', '1'])
-        for line in output.splitlines():
-            if 'board-id' in line:
-                return re.sub(r"^\s*\"board-id\" = <\"(.*)\">$", r"\1", line)
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-p',
+                                        'IODeviceTree',
+                                        '-r',
+                                        '-n',
+                                        '/',
+                                        '-d',
+                                        '1',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)
+        return str(d[0]['board-id']).split("'")[1].split('\\')[0]
 
-    def get_firmware_version(self):
-        '''Returns a dict of the firmware version of the Mac
+    def get_drive_model(self):
+        '''Returns drive model
         Ref: https://github.com/hjuutilainen/adminscripts/blob/master/check-mavericks-compatibility.py'''
-        d = {}
-        output = subprocess.check_output(['/usr/sbin/ioreg', '-p', 'IOService',
-                '-n', 'AppleAHCIDiskDriver',
-                '-r',
-                '-l',
-                '-d', '1',
-                '-w', '0'])
-        disk_dict = {}
-        for line in output.splitlines():
-            m = re.match(r"^\s*\"(?P<key>.*)\" = \"(?P<value>.*)\"$", line)
-            if m:
-                disk_dict[m.group('key')] = m.group('value').strip()
-        model = disk_dict.get('Model', '')
-        revision = disk_dict.get('Revision', '')
-        return model, revision
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-p', 'IOService',
+                                        '-n', 'AppleAHCIDiskDriver',
+                                        '-r',
+                                        '-l',
+                                        '-d', '1',
+                                        '-w', '0',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)
+        return d[0]['Model'].strip()
+
+    def get_drive_revision(self):
+        '''Returns drive revision
+        Ref: https://github.com/hjuutilainen/adminscripts/blob/master/check-mavericks-compatibility.py'''
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-p', 'IOService',
+                                        '-n', 'AppleAHCIDiskDriver',
+                                        '-r',
+                                        '-l',
+                                        '-d', '1',
+                                        '-w', '0',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)
+        return d[0]['Revision'].strip()
+
+    def get_drive_serial(self):
+        '''Returns a tuple of the firmware version of the Mac
+        Ref: https://github.com/hjuutilainen/adminscripts/blob/master/check-mavericks-compatibility.py'''
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-p', 'IOService',
+                                        '-n', 'AppleAHCIDiskDriver',
+                                        '-r',
+                                        '-l',
+                                        '-d', '1',
+                                        '-w', '0',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)
+        return d[0]['Serial Number'].strip()
 
     def get_cidr(self):
         '''Returns the cidr of the current network'''
@@ -667,7 +701,7 @@ def main():
         d = {}
         for i in sorted(l):
             d[i] = getattr(facts, 'get_' + i)()
-        for k, v in d.items():
+        for k, v in sorted(d.items()):
             print '%s => %s' % (k, v)
 
 if __name__ == "__main__":
