@@ -397,9 +397,10 @@ class Facts(object):
     def get_macaddress(self):
         '''Returns the MAC address of the current active network'''
         interface = self.activenetwork
-        output = subprocess.check_output(['/usr/sbin/networksetup',
-                                        '-getmacaddress', interface])
-        return output.split(' ')[2]
+        if interface:
+            output = subprocess.check_output(['/usr/sbin/networksetup',
+                                            '-getmacaddress', interface])
+            return output.split(' ')[2]
 
     def get_model(self):
         '''Returns the hardware model of the Mac'''
