@@ -89,13 +89,8 @@ class Facts(object):
         ## Using SystemConfiguration:
         # hostname = SCDynamicStoreCopyComputerName(None, None)[0]
         # hostname = SCDynamicStoreCopyLocalHostName(None)
-        try:
-            hostname = socket.gethostname()
-            if not '.' in hostname:
-                return hostname + '.local'
-            return hostname
-        except:
-            return None
+        hostname = socket.gethostname()
+        return hostname if '.' in hostname else hostname + '.local'
 
     def get_kernelversion(self):
         '''Returns the darwin version of this Mac
