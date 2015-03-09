@@ -95,64 +95,40 @@ class Facts(object):
     def get_kernelversion(self):
         '''Returns the darwin version of this Mac
         example: 13.1.0'''
-        try:
-            return platform.release()
-        except:
-            return None
+        return platform.release()
 
     def get_productversion(self):
         '''Returns the os x version of this Mac
         example: 10.9.2'''
-        try:
-            return platform.mac_ver()[0]
-        except:
-            return None
+        return platform.mac_ver()[0]
 
     def get_productversionmajor(self):
         '''Returns the major os x version of this Mac'''
-        try:
-            return '.'.join(platform.mac_ver()[0].split('.')[0:2])
-        except:
-            return None
+        return '.'.join(platform.mac_ver()[0].split('.')[0:2])
 
     def get_productversionminor(self):
         '''Returns the minor os x version of this Mac'''
-        try:
-            return platform.mac_ver()[0].split('.')[-1]
-        except:
-            return None
+        return platform.mac_ver()[0].split('.')[-1]
 
     def get_pythonversion(self):
         '''Returns the python version on this Mac'''
-        try:
-            return platform.python_version()
-        except:
-            return None
+        return platform.python_version()
 
     def get_architecture(self):
         '''Returns the architecture of this Mac
         example: x86_64'''
-        try:
-            return platform.machine()
-        except:
-            return None
+        return platform.machine()
 
     def get_platform(self):
         '''Returns the processor type of this Mac
         exxample: darwin'''
-        try:
-            return sys.platform
-        except:
-            return None
+        return sys.platform
 
     def get_id(self):
         '''Returns the current console user on this Mac'''
-        try:
-            return os.getlogin()
-        except:
-            return None
         ## Using SystemConfiguration:
         # return SCDynamicStoreCopyConsoleUser(None, None, None)[0]
+        return os.getlogin()
 
     def get_user(self):
         script = ['/usr/bin/last']
@@ -167,59 +143,35 @@ class Facts(object):
 
     def get_uname(self):
         '''Returns the full uname of this Mac as a tuple'''
-        try:
-            return os.uname()
-        except:
-            return none
+        return os.uname()
 
     def get_sysinfo(self):
         '''Returns the system info of this Mac'''
-        try:
-            return os.uname()[3]
-        except:
-            return None
+        return os.uname()[3]
 
     def get_homedir(self):
         '''Returns the home directory of the current user'''
-        try:
-            return os.environ['HOME']
-        except:
-            return None
+        return os.environ['HOME']
 
     def get_prompt(self):
         '''Returns the prompt env of the current user'''
-        try:
-            return os.environ['PROMPT_COMMAND']
-        except:
-            return None
+        return os.environ['PROMPT_COMMAND']
 
     def get_path(self):
         '''Returns the path env of the current user'''
-        try:
-            return os.environ['PATH']
-        except:
-            return None
+        return os.environ['PATH']
 
     def get_term(self):
         '''Returns the term env of the current user'''
-        try:
-            return os.environ['TERM']
-        except:
-            return None
+        return os.environ['TERM']
 
     def get_termprogram(self):
         '''Returns the term program env of the current user'''
-        try:
-            return os.environ['TERM_PROGRAM']
-        except:
-            return None
+        return os.environ['TERM_PROGRAM']
 
     def get_shell(self):
         '''Returns the shell env of the current user'''
-        try:
-            return os.environ['SHELL']
-        except:
-            return None
+        return os.environ['SHELL']
 
     def get_pythoninterpreter(self):
         '''Returns the python interpreter on this Mac'''
@@ -227,78 +179,48 @@ class Facts(object):
 
     def get_editor(self):
         '''Returns the editor env of the current user'''
-        try:
-            return os.environ['EDITOR']
-        except:
-            return None
+        return os.environ['EDITOR']
 
     def get_pwd(self):
         '''Returns the pwd'''
-        try:
-            return os.environ['PWD']
-        except:
-            return None
+        return os.environ['PWD']
 
     def get_tmpdir(self):
         '''Returns the tempdir env of the current user'''
-        try:
-            return os.environ['TMPDIR']
-        except:
-            return None
+        return os.environ['TMPDIR']
 
     def get_cwd(self):
         '''Returns the cwd'''
-        try:
-            return os.getcwd()
-        except:
-            return None
+        return os.getcwd()
 
     def get_euid(self):
         '''Returns the euid of the current user'''
-        try:
-            return os.geteuid()
-        except:
-            return None
+        return os.geteuid()
 
     def get_uid(self):
         '''Returns the uid of the current user'''
         ## Using SystemConfiguration:
         # return SCDynamicStoreCopyConsoleUser(None, None, None)[1]
-        try:
-            return os.getuid()
-        except:
-            return None
+        return os.getuid()
 
     def get_egid(self):
         '''Returns the egid of the current user'''
-        try:
-            return os.getegid()
-        except:
-            return None
+        return os.getegid()
 
     def get_gid(self):
         '''Returns the gid of the current user'''
         ## Using SystemConfiguration:
         # return SCDynamicStoreCopyConsoleUser(None, None, None)[2]
-        try:
-            return os.getgid()
-        except:
-            return None
+        return os.getgid()
 
     def get_groups(self):
         '''Returns the groups of the current user'''
-        try:
-            return os.getgroups()
-        except:
-            return None
+        return os.getgroups()
 
     def get_ip(self):
         '''Returns the IP address of the Mac'''
         hostname = self.get_hostname()
-        try:
-            return socket.gethostbyname(hostname)
-        except:
-            return None
+        return socket.gethostbyname(hostname)
 
     def get_external_ip(self):
         url = 'http://api.hostip.info/get_json.php'
