@@ -565,7 +565,7 @@ class Facts(object):
         output = subprocess.check_output(['/usr/sbin/diskutil', 'info', 
                                         '-plist', '/'])
         xml = plistlib.readPlistFromString(output)
-        return xml['MediaName']
+        return xml['VolumeName']
 
     def get_recoveryhd(self):
         '''Returns the recovery hd device name'''
