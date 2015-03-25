@@ -360,6 +360,12 @@ class Facts(object):
         d = plistlib.readPlistFromString(output)[0]
         return d['BatterySerialNumber']
 
+    def get_batterypercentage(self):
+        '''Returns the percetage of the battery'''
+        task = ['pmset', '-g', 'batt']
+        return re.findall(r'\d+%', subprocess.check_output(
+                                        task))[0].replace('%','')
+
     def get_freespace(self):
         '''Returns the free space on the boot drive'''
         output = subprocess.check_output(['/usr/sbin/diskutil',
