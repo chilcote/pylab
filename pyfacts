@@ -155,7 +155,11 @@ class Facts(object):
 
     def get_prompt(self):
         '''Returns the prompt env of the current user'''
-        return os.environ['PROMPT_COMMAND']
+        try:
+            pc = os.environ['PROMPT_COMMAND']
+        except KeyError:
+            pc = None
+        return pc
 
     def get_path(self):
         '''Returns the path env of the current user'''
@@ -167,7 +171,11 @@ class Facts(object):
 
     def get_termprogram(self):
         '''Returns the term program env of the current user'''
-        return os.environ['TERM_PROGRAM']
+        try:
+            tp = os.environ['TERM_PROGRAM']
+        except KeyError:
+            tp = None
+        return tp
 
     def get_shell(self):
         '''Returns the shell env of the current user'''
@@ -179,15 +187,27 @@ class Facts(object):
 
     def get_editor(self):
         '''Returns the editor env of the current user'''
-        return os.environ['EDITOR']
+        try:
+            ed = os.environ['EDITOR']
+        except KeyError:
+            ed = None
+        return ed
 
     def get_pwd(self):
         '''Returns the pwd'''
-        return os.environ['PWD']
+        try:
+            pwd = os.environ['PWD']
+        except KeyError:
+            pwd = None
+        return pwd
 
     def get_tmpdir(self):
         '''Returns the tempdir env of the current user'''
-        return os.environ['TMPDIR']
+        try:
+            td = os.environ['TMPDIR']
+        except KeyError:
+            td = None
+        return td
 
     def get_cwd(self):
         '''Returns the cwd'''
