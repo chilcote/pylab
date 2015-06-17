@@ -390,8 +390,9 @@ class Facts(object):
 
     def get_gatekeeperstatus(self):
         '''Returns whether gatekeeper is enabled'''
-        output = subprocess.check_output(['/usr/sbin/spctl', '--status'])
-        return output.strip()
+        proc = subprocess.Popen(['/usr/sbin/spctl', '--status'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        return stdout.strip()
 
     def get_activenetwork(self):
         '''Returns the active network interface of the Mac'''
