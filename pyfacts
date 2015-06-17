@@ -149,15 +149,10 @@ class Facts(object):
         '''Returns the system info of this Mac'''
         return os.uname()[3]
 
-    # def get_homedir(self):
-    #     '''Returns the home directory of the current user'''
-    #     return os.environ['HOME']
+    def get_homedir(self):
+        '''Returns the home directory of the current user'''
+        return os.environ['HOME']
 
-<<<<<<< HEAD
-    # def get_prompt(self):
-    #     '''Returns the prompt env of the current user'''
-    #     return os.environ['PROMPT_COMMAND']
-=======
     def get_prompt(self):
         '''Returns the prompt env of the current user'''
         try:
@@ -165,21 +160,15 @@ class Facts(object):
         except KeyError:
             pc = None
         return pc
->>>>>>> 7840a59c98604ab7a84908bf8efeecaf9886120f
 
-    # def get_path(self):
-    #     '''Returns the path env of the current user'''
-    #     return os.environ['PATH']
+    def get_path(self):
+        '''Returns the path env of the current user'''
+        return os.environ['PATH']
 
-    # def get_term(self):
-    #     '''Returns the term env of the current user'''
-    #     return os.environ['TERM']
+    def get_term(self):
+        '''Returns the term env of the current user'''
+        return os.environ['TERM']
 
-<<<<<<< HEAD
-    # def get_termprogram(self):
-    #     '''Returns the term program env of the current user'''
-    #     return os.environ['TERM_PROGRAM']
-=======
     def get_termprogram(self):
         '''Returns the term program env of the current user'''
         try:
@@ -187,21 +176,15 @@ class Facts(object):
         except KeyError:
             tp = None
         return tp
->>>>>>> 7840a59c98604ab7a84908bf8efeecaf9886120f
 
-    # def get_shell(self):
-    #     '''Returns the shell env of the current user'''
-    #     return os.environ['SHELL']
+    def get_shell(self):
+        '''Returns the shell env of the current user'''
+        return os.environ['SHELL']
 
-    # def get_pythoninterpreter(self):
-    #     '''Returns the python interpreter on this Mac'''
-    #     return os.environ['VERSIONER_PYTHON_VERSION']
+    def get_pythoninterpreter(self):
+        '''Returns the python interpreter on this Mac'''
+        return os.environ['VERSIONER_PYTHON_VERSION']
 
-<<<<<<< HEAD
-    # def get_editor(self):
-    #     '''Returns the editor env of the current user'''
-    #     return os.environ['EDITOR']
-=======
     def get_editor(self):
         '''Returns the editor env of the current user'''
         try:
@@ -209,7 +192,6 @@ class Facts(object):
         except KeyError:
             ed = None
         return ed
->>>>>>> 7840a59c98604ab7a84908bf8efeecaf9886120f
 
     def get_pwd(self):
         '''Returns the pwd'''
