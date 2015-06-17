@@ -149,37 +149,37 @@ class Facts(object):
         '''Returns the system info of this Mac'''
         return os.uname()[3]
 
-    def get_homedir(self):
-        '''Returns the home directory of the current user'''
-        return os.environ['HOME']
+    # def get_homedir(self):
+    #     '''Returns the home directory of the current user'''
+    #     return os.environ['HOME']
 
-    def get_prompt(self):
-        '''Returns the prompt env of the current user'''
-        return os.environ['PROMPT_COMMAND']
+    # def get_prompt(self):
+    #     '''Returns the prompt env of the current user'''
+    #     return os.environ['PROMPT_COMMAND']
 
-    def get_path(self):
-        '''Returns the path env of the current user'''
-        return os.environ['PATH']
+    # def get_path(self):
+    #     '''Returns the path env of the current user'''
+    #     return os.environ['PATH']
 
-    def get_term(self):
-        '''Returns the term env of the current user'''
-        return os.environ['TERM']
+    # def get_term(self):
+    #     '''Returns the term env of the current user'''
+    #     return os.environ['TERM']
 
-    def get_termprogram(self):
-        '''Returns the term program env of the current user'''
-        return os.environ['TERM_PROGRAM']
+    # def get_termprogram(self):
+    #     '''Returns the term program env of the current user'''
+    #     return os.environ['TERM_PROGRAM']
 
-    def get_shell(self):
-        '''Returns the shell env of the current user'''
-        return os.environ['SHELL']
+    # def get_shell(self):
+    #     '''Returns the shell env of the current user'''
+    #     return os.environ['SHELL']
 
-    def get_pythoninterpreter(self):
-        '''Returns the python interpreter on this Mac'''
-        return os.environ['VERSIONER_PYTHON_VERSION']
+    # def get_pythoninterpreter(self):
+    #     '''Returns the python interpreter on this Mac'''
+    #     return os.environ['VERSIONER_PYTHON_VERSION']
 
-    def get_editor(self):
-        '''Returns the editor env of the current user'''
-        return os.environ['EDITOR']
+    # def get_editor(self):
+    #     '''Returns the editor env of the current user'''
+    #     return os.environ['EDITOR']
 
     def get_pwd(self):
         '''Returns the pwd'''
@@ -359,6 +359,42 @@ class Facts(object):
                                         '-a'])
         d = plistlib.readPlistFromString(output)[0]
         return d['BatterySerialNumber']
+
+    def get_batterycharging(self):
+        '''Returns the serial of the battery'''
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-r',
+                                        '-c', 'AppleSmartBattery',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)[0]
+        return d['IsCharging']
+
+    def get_batterycharged(self):
+        '''Returns the serial of the battery'''
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-r',
+                                        '-c', 'AppleSmartBattery',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)[0]
+        return d['FullyCharged']
+
+    def get_batteryremaining(self):
+        '''Returns the serial of the battery'''
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-r',
+                                        '-c', 'AppleSmartBattery',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)[0]
+        return d['TimeRemaining']
+
+    def get_batterycapacity(self):
+        '''Returns the serial of the battery'''
+        output = subprocess.check_output(['/usr/sbin/ioreg',
+                                        '-r',
+                                        '-c', 'AppleSmartBattery',
+                                        '-a'])
+        d = plistlib.readPlistFromString(output)[0]
+        return d['CurrentCapacity']
 
     def get_batterypercentage(self):
         '''Returns the percetage of the battery'''
