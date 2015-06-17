@@ -38,7 +38,7 @@ class Notify(object):
         self.notification.setDeliveryDate_(NSDate.dateWithTimeInterval_sinceDate_(delay, NSDate.date()))
         self.notification.setUserInfo_(userInfo)
         if sound:
-            self.notification.setSoundName_("NSUserNotificationDefaultSoundName")        
+            self.notification.setSoundName_("NSUserNotificationDefaultSoundName")
         NSUserNotificationCenter.defaultUserNotificationCenter().scheduleNotification_(self.notification)
 
 def main():
