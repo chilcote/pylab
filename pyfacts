@@ -650,7 +650,7 @@ class Facts(object):
         cmd = ['sysctl', '-n', 'kern.boottime']
         task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (epoch, err) = task.communicate()
-        return ".".join([datetime.datetime.fromtimestamp(1435693401).strftime('%Y-%m-%d %H:%M:%S'), '000'])
+        return ".".join([datetime.datetime.fromtimestamp(int(epoch.split(' = ')[1].split(',')[0])).strftime('%Y-%m-%d %H:%M:%S'), '000'])
 
 def main():
     '''Runs in interactive mode'''
