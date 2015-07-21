@@ -72,6 +72,12 @@ class Facts(object):
         self.network_interfaces = SCNetworkInterfaceCopyAll()
         self.wifi = CWInterface.interfaceNames()
         self.activenetwork = self.get_activenetwork()
+        self.hardwaredatatype = plistlib.readPlistFromString(
+            subprocess.check_output(
+            ['/usr/sbin/system_profiler',
+            'SPHardwareDataType',
+            '-xml']
+            ))[0]['_items'][0]
         if self.wifi:
             for iname in self.wifi:
                 self.interface = CWInterface.interfaceWithName_(iname)
@@ -651,6 +657,18 @@ class Facts(object):
         task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (epoch, err) = task.communicate()
         return ".".join([datetime.datetime.fromtimestamp(int(epoch.split(' = ')[1].split(',')[0])).strftime('%Y-%m-%d %H:%M:%S'), '000'])
+
+    def get_is_laptop(self):
+        '''Returns whether the Mac is a laptop'''
+        return True if 'book' in self.hardwaredatatype['machine_model'].lower() else False
+
+    def get_smc_version(self):
+        '''Returns the smc version'''
+        return self.hardwaredatatype['SMC_version_system']
+
+    def get_boot_rom(self):
+        '''Returns the boot rom version'''
+        return self.hardwaredatatype['boot_rom_version']
 
 def main():
     '''Runs in interactive mode'''
