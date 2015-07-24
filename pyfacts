@@ -71,7 +71,7 @@ class Facts(object):
         self.network_services = SCNetworkServiceCopyAll(self.prefs)
         self.network_interfaces = SCNetworkInterfaceCopyAll()
         self.wifi = CWInterface.interfaceNames()
-        self.activenetwork = self.get_activenetwork()
+        self.primaryinterface = self.get_primaryinterface()
         self.hardwaredatatype = plistlib.readPlistFromString(
             subprocess.check_output(
             ['/usr/sbin/system_profiler',
@@ -245,9 +245,13 @@ class Facts(object):
         return os.getgroups()
 
     def get_ip(self):
-        '''Returns the IP address of the Mac'''
-        hostname = self.get_hostname()
-        return socket.gethostbyname(hostname)
+        '''Returns the IP address of the primary network interface'''
+        interface = self.get_primaryinterface()
+        try:
+            ip = subprocess.check_output(['/usr/sbin/ipconfig', 'getifaddr', interface])
+        except subprocess.CalledProcessError:
+            ip = 'Unknown'
+        return ip.strip()
 
     def get_external_ip(self):
         url = 'http://api.hostip.info/get_json.php'
@@ -457,7 +461,7 @@ class Facts(object):
         stdout, stderr = proc.communicate()
         return stdout.strip()
 
-    def get_activenetwork(self):
+    def get_primaryinterface(self):
         '''Returns the active network interface of the Mac'''
         output = subprocess.check_output(['/usr/sbin/netstat', '-rn'])
         for line in output.splitlines():
@@ -466,7 +470,7 @@ class Facts(object):
 
     def get_macaddress(self):
         '''Returns the MAC address of the current active network'''
-        interface = self.activenetwork
+        interface = self.primaryinterface
         if interface:
             output = subprocess.check_output(['/usr/sbin/networksetup',
                                             '-getmacaddress', interface])
@@ -669,6 +673,16 @@ class Facts(object):
     def get_boot_rom(self):
         '''Returns the boot rom version'''
         return self.hardwaredatatype['boot_rom_version']
+
+    def get_activeinterfaces(self):
+        interfaces = [ SCNetworkInterfaceGetBSDName(i) for i in SCNetworkInterfaceCopyAll() if SCNetworkInterfaceGetBSDName(i).startswith('en') ]
+        d = {}
+        for i in interfaces:
+            try:
+                d[i] = subprocess.check_output(['/usr/sbin/ipconfig', 'getifaddr', i]).strip()
+            except subprocess.CalledProcessError:
+                continue
+        return d
 
 def main():
     '''Runs in interactive mode'''
