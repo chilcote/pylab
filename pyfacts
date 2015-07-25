@@ -747,6 +747,7 @@ def main():
     else:
         d = {}
         for i in sorted(l):
+            print 'Processing: %s' % i
             d[i] = getattr(facts, 'get_' + i)()
         for k, v in sorted(d.items()):
             print '%s => %s' % (k, v)
