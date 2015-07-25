@@ -39,6 +39,8 @@ class WiFi(object):
         self.wifi = CWInterface.interfaceNames()
         for iname in self.wifi:
             self.interface = CWInterface.interfaceWithName_(iname)
+        self.ip_monitor = self.interface.ipMonitor()
+        self.last_network_joined = self.interface.lastNetworkJoined()
 
     def get_wifistatus(self):
         if self.interface.powerOn() == 1:
@@ -72,6 +74,18 @@ class WiFi(object):
     def get_mcsindex(self):
         return self.interface.mcsIndex()
 
+    def get_security(self):
+        return self.interface.securityMode()
+
+    def get_ipaddress(self):
+        return self.ip_monitor.ipv4Addresses()[0]
+
+    def get_last_network_joined(self):
+        return self.last_network_joined.ssid()
+
+    def get_last_tethered_device(self):
+        return self.interface.lastTetherDeviceJoined()
+
 def main():
     wifi = WiFi()
     print 'Interface: %s' % wifi.get_interface()
@@ -84,6 +98,10 @@ def main():
     print 'Channel: %s' % wifi.get_channel()
     print 'Transmit Rate: %s' % wifi.get_transmitrate()
     print 'MCS Index: %s' % wifi.get_mcsindex()
+    print 'Security: %s' % wifi.get_security()
+    print 'IP Address: %s' % wifi.get_ipaddress()
+    print 'Last Network Joined: %s' % wifi.get_last_network_joined()
+    print 'Last Tethered Device Joined: %s' % wifi.get_last_tethered_device()
 
 if __name__ == "__main__":
     main()
