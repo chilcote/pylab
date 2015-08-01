@@ -36,7 +36,7 @@ import subprocess
 import argparse
 import plistlib
 import datetime
-from urllib import urlopen
+import urllib2
 import json
 from collections import Counter
 from AppKit import NSScreen
@@ -254,12 +254,13 @@ class Facts(object):
         return ip.strip()
 
     def get_external_ip(self):
-        url = 'http://api.hostip.info/get_json.php'
+        url = 'http://ipecho.net/plain'
         try:
-            info = json.loads(urlopen(url).read().decode('utf-8'))
-            return info['ip']
-        except IOError as err:
+            ip = urllib2.urlopen(url).read()
+            return ip.strip()
+        except urllib2.HTTPError as err:
             return 'Cannot connect to %s: %s' % (url, err)
+        return 'Unknown'
 
     def get_networkservices(self):
         '''Returns a list of all network interface names'''
