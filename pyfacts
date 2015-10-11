@@ -41,13 +41,20 @@ import json
 from collections import Counter
 from AppKit import NSScreen
 from CoreFoundation import CFPreferencesCopyAppValue
-# from SystemConfiguration import *
-from SystemConfiguration import SCPreferencesCreate, SCNetworkServiceCopyAll, \
-        SCNetworkInterfaceCopyAll, SCDynamicStoreCopyComputerName, \
-        SCDynamicStoreCopyLocalHostName, SCDynamicStoreCopyConsoleUser, \
-        SCNetworkInterfaceGetBSDName, SCNetworkInterfaceGetHardwareAddressString, \
-        SCNetworkInterfaceGetLocalizedDisplayName, SCNetworkServiceGetName
 import objc
+# from SystemConfiguration import *
+from SystemConfiguration import SCPreferencesCreate, \
+                                SCNetworkServiceCopyAll, \
+                                SCNetworkInterfaceCopyAll, \
+                                SCDynamicStoreCopyComputerName, \
+                                SCDynamicStoreCopyLocalHostName, \
+                                SCDynamicStoreCopyConsoleUser, \
+                                SCNetworkInterfaceGetBSDName, \
+                                SCNetworkInterfaceGetHardwareAddressString, \
+                                SCNetworkInterfaceGetLocalizedDisplayName, \
+                                SCNetworkServiceGetName, \
+                                SCDynamicStoreCreate, \
+                                SCDynamicStoreCopyValue
 
 objc.loadBundle('CoreWLAN',
                 bundle_path='/System/Library/Frameworks/CoreWLAN.framework',
@@ -71,6 +78,7 @@ class Facts(object):
         self.network_services = SCNetworkServiceCopyAll(self.prefs)
         self.network_interfaces = SCNetworkInterfaceCopyAll()
         self.wifi = CWInterface.interfaceNames()
+        self.net_config = SCDynamicStoreCreate(None, "net", None, None)
         self.primaryinterface = self.get_primaryinterface()
         self.hardwaredatatype = plistlib.readPlistFromString(
             subprocess.check_output(
@@ -246,12 +254,14 @@ class Facts(object):
 
     def get_ip(self):
         '''Returns the IP address of the primary network interface'''
-        interface = self.get_primaryinterface()
-        try:
-            ip = subprocess.check_output(['/usr/sbin/ipconfig', 'getifaddr', interface])
-        except subprocess.CalledProcessError:
-            ip = 'Unknown'
-        return ip.strip()
+        # interface = self.get_primaryinterface()
+        # try:
+        #     ip = subprocess.check_output(['/usr/sbin/ipconfig', 'getifaddr', interface])
+        # except subprocess.CalledProcessError:
+        #     ip = 'Unknown'
+        # return ip.strip()
+        addresses = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Interface/%s/IPv4" % self.primaryinterface)
+        return addresses['Addresses'][0]
 
     def get_external_ip(self):
         url = 'http://ipecho.net/plain'
@@ -300,6 +310,16 @@ class Facts(object):
                         l.append(domain)
                 d[interface] = l
         return d
+
+    def get_searchdomains_from_dhcp(self):
+        '''Returns a list of search domains'''
+        interface = self.get_primaryinterface()
+        cmd = ['/usr/sbin/ipconfig', 'getpacket', interface]
+        output = subprocess.check_output(cmd)
+        for line in output.splitlines():
+            if 'domain_search' in line:
+                return re.sub('[{}]', '', line.split(': ')[1])
+        return 'None'
 
     def get_networkinterfacelist(self):
         '''Returns a list of all network interface names'''
@@ -464,10 +484,12 @@ class Facts(object):
 
     def get_primaryinterface(self):
         '''Returns the active network interface of the Mac'''
-        output = subprocess.check_output(['/usr/sbin/netstat', '-rn'])
-        for line in output.splitlines():
-            if 'default' in line and not 'utun' in line:
-                return line.split(' ')[-1].strip()
+        # output = subprocess.check_output(['/usr/sbin/netstat', '-rn'])
+        # for line in output.splitlines():
+        #     if 'default' in line and not 'utun' in line:
+        #         return line.split(' ')[-1].strip()
+        states = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/IPv4")
+        return states['PrimaryInterface']
 
     def get_macaddress(self):
         '''Returns the MAC address of the current active network'''
