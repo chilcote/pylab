@@ -261,7 +261,10 @@ class Facts(object):
         #     ip = 'Unknown'
         # return ip.strip()
         addresses = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Interface/%s/IPv4" % self.primaryinterface)
-        return addresses['Addresses'][0]
+        try:
+            return addresses['Addresses'][0]
+        except TypeError:
+            return None
 
     def get_external_ip(self):
         url = 'http://ipecho.net/plain'
@@ -646,16 +649,17 @@ class Facts(object):
         '''Returns the cidr of the current network'''
         netmask = ''
         ip = self.get_ip()
-        output = subprocess.check_output(['/sbin/ifconfig', 'en0'])
-        for line in output.splitlines():
-            if ip in line:
-                netmask = line.split(' ')[3].lower()
-        count = int(0)
-        count+=int(netmask.count('f')) * 4
-        count+=int(netmask.count('e')) * 3
-        count+=int(netmask.count('c')) * 2
-        count+=int(netmask.count('8')) * 1
-        return '%s.%s/%s' % ('.'.join(ip.split('.')[0:3]), '0', count)
+        if ip:
+            output = subprocess.check_output(['/sbin/ifconfig', 'en0'])
+            for line in output.splitlines():
+                if ip in line:
+                    netmask = line.split(' ')[3].lower()
+            count = int(0)
+            count+=int(netmask.count('f')) * 4
+            count+=int(netmask.count('e')) * 3
+            count+=int(netmask.count('c')) * 2
+            count+=int(netmask.count('8')) * 1
+            return '%s.%s/%s' % ('.'.join(ip.split('.')[0:3]), '0', count)
 
     def get_bootvolume(self):
         '''Returns the boot volume name'''
