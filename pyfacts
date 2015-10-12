@@ -745,6 +745,21 @@ class Facts(object):
             else:
                 return 'Undetermined'
 
+    def get_printers(self):
+        '''Returns name, ppd, and uri of printers
+        ref: https://gist.githubusercontent.com/arubdesu/639d3d228824ebc57cc0/raw/fdbef07ded37c8ed8d2c2973e6fa3ede505d0ea2/ad-hoc_inventory.py'''
+        full_prints = plistlib.readPlistFromString(
+            subprocess.check_output(
+                ['/usr/sbin/system_profiler',
+                 'SPPrintersDataType',
+                 '-xml']))
+        all_printdicts = full_prints[0]['_items']
+        just_prints = {}
+        for printer in all_printdicts:
+            just_prints[printer.get('_name', None)] = [printer.get('ppd', None),
+                                                       printer.get('uri', None)]
+        return just_prints            
+
 def main():
     '''Runs in interactive mode'''
     parser = argparse.ArgumentParser()
