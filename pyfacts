@@ -98,14 +98,16 @@ class Facts(object):
             return None
     
     def get_hostname(self):
-        '''Returns the hostname of this Mac
-        if it is not a FQDN, we will append .local'''
-        # hostname = platform.node()
-        ## Using SystemConfiguration:
-        # hostname = SCDynamicStoreCopyComputerName(None, None)[0]
+        '''Returns the hostname of this Mac'''
         # hostname = SCDynamicStoreCopyLocalHostName(None)
-        hostname = socket.gethostname()
-        return hostname if '.' in hostname else hostname + '.local'
+        sys_info = SCDynamicStoreCopyValue(self.net_config, "Setup:/System")
+        return sys_info['HostName']
+
+    def get_computername(self):
+        '''Returns the ComputerName of this Mac'''
+        # computername = SCDynamicStoreCopyComputerName(None, None)[0]
+        sys_info = SCDynamicStoreCopyValue(self.net_config, "Setup:/System")
+        return sys_info['ComputerName']
 
     def get_kernelversion(self):
         '''Returns the darwin version of this Mac
@@ -314,6 +316,11 @@ class Facts(object):
                 d[interface] = l
         return d
 
+    def get_dnsinfo(self):
+        '''Returns the currently considered primary network interface'''
+        dns_info = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/DNS")
+        return dns_info
+
     def get_searchdomains_from_dhcp(self):
         '''Returns a list of search domains'''
         interface = self.get_primaryinterface()
@@ -491,8 +498,11 @@ class Facts(object):
         # for line in output.splitlines():
         #     if 'default' in line and not 'utun' in line:
         #         return line.split(' ')[-1].strip()
-        states = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/IPv4")
-        return states['PrimaryInterface']
+        try:
+            states = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/IPv4")
+            return states['PrimaryInterface']
+        except TypeError:
+            return None
 
     def get_macaddress(self):
         '''Returns the MAC address of the current active network'''
@@ -758,7 +768,22 @@ class Facts(object):
         for printer in all_printdicts:
             just_prints[printer.get('_name', None)] = [printer.get('ppd', None),
                                                        printer.get('uri', None)]
-        return just_prints            
+        return just_prints
+
+    def get_adinfo(self):
+        '''Returns the ad directory info'''
+        ad_info = SCDynamicStoreCopyValue(self.net_config, "com.apple.opendirectoryd.ActiveDirectory")
+        return ad_info
+
+    def get_dscontactsnode(self):
+        '''Returns the directory /Contacts node'''
+        contacts_node = SCDynamicStoreCopyValue(self.net_config, "com.apple.opendirectoryd.node:/Contacts")
+        return contacts_node
+
+    def get_dssearchnode(self):
+        '''Returns the directory /Search node'''
+        search_node = SCDynamicStoreCopyValue(self.net_config, "com.apple.opendirectoryd.node:/Contacts")
+        return search_node
 
 def main():
     '''Runs in interactive mode'''
