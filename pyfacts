@@ -280,8 +280,8 @@ class Facts(object):
     def get_networkservices(self):
         '''Returns a list of all network interface names'''
         l = []
-        for service in self.network_services:
-            l.append(SCNetworkServiceGetName(service))
+        for interface in self.network_interfaces:
+            l.append(SCNetworkInterfaceGetLocalizedDisplayName(interface))
         return l
     
     def get_searchdomains(self):
