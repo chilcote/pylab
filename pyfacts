@@ -284,42 +284,28 @@ class Facts(object):
             l.append(SCNetworkInterfaceGetLocalizedDisplayName(interface))
         return l
     
-    def get_searchdomains(self):
-        '''Returns a list of search domains'''
-        interfaces = self.get_networkservices()
-        d = {}
-        for interface in interfaces:
-            if 'Ethernet' in interface or 'Wi-Fi' in interface:
-                cmd = ['/usr/sbin/networksetup', '-getsearchdomains',
-                        interface]
-                output = subprocess.check_output(cmd)
-                l = []
-                for domain in output.splitlines():
-                    if not 'There aren\'t' in domain:
-                        l.append(domain)
-                d[interface] = l
-        return d
-
-    def get_dnsservers(self):
-        '''Returns a list of search domains'''
-        interfaces = self.get_networkservices()
-        d = {}
-        for interface in interfaces:
-            if 'Ethernet' in interface or 'Wi-Fi' in interface:
-                cmd = ['/usr/sbin/networksetup', '-getdnsservers',
-                        interface]
-                output = subprocess.check_output(cmd)
-                l = []
-                for domain in output.splitlines():
-                    if not 'There aren\'t' in domain:
-                        l.append(domain)
-                d[interface] = l
-        return d
-
-    def get_dnsinfo(self):
-        '''Returns the currently considered primary network interface'''
+    def get_dns_domain(self):
+        '''Returns the current dns domain'''
         dns_info = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/DNS")
-        return dns_info
+        return dns_info['DomainName'] if dns_info else None
+
+    def get_searchdomains(self):
+        '''Returns the current search domains'''
+        l = []
+        dns_info = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/DNS")
+        if dns_info:
+            for i in dns_info['SearchDomains']:
+                l.append(i)
+            return l
+
+    def get_dns_servers(self):
+        '''Returns the current dns servers'''
+        l = []
+        dns_info = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/DNS")
+        if dns_info:
+            for i in dns_info['ServerAddresses']:
+                l.append(i)
+            return l
 
     def get_searchdomains_from_dhcp(self):
         '''Returns a list of search domains'''
@@ -778,12 +764,13 @@ class Facts(object):
     def get_dscontactsnode(self):
         '''Returns the directory /Contacts node'''
         contacts_node = SCDynamicStoreCopyValue(self.net_config, "com.apple.opendirectoryd.node:/Contacts")
-        return contacts_node
+        return contacts_node[0]
 
     def get_dssearchnode(self):
         '''Returns the directory /Search node'''
+        l = []
         search_node = SCDynamicStoreCopyValue(self.net_config, "com.apple.opendirectoryd.node:/Contacts")
-        return search_node
+        return search_node[0]
 
 def main():
     '''Runs in interactive mode'''
