@@ -287,13 +287,14 @@ class Facts(object):
     def get_dns_domain(self):
         '''Returns the current dns domain'''
         dns_info = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/DNS")
-        return dns_info['DomainName'] if dns_info else None
+        if dns_info.get('DomainName'):
+            return dns_info['DomainName']
 
     def get_searchdomains(self):
         '''Returns the current search domains'''
         l = []
         dns_info = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/DNS")
-        if dns_info:
+        if dns_info and dns_info.get('SearchDomains'):
             try:
                 for i in dns_info['SearchDomains']:
                     l.append(i)
