@@ -294,9 +294,12 @@ class Facts(object):
         l = []
         dns_info = SCDynamicStoreCopyValue(self.net_config, "State:/Network/Global/DNS")
         if dns_info:
-            for i in dns_info['SearchDomains']:
-                l.append(i)
-            return l
+            try:
+                for i in dns_info['SearchDomains']:
+                    l.append(i)
+                return l
+            except KeyError as err:
+                return 'No search domains found'
 
     def get_dns_servers(self):
         '''Returns the current dns servers'''
