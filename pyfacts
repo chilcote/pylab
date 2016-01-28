@@ -387,8 +387,9 @@ class Facts(object):
                                         '-r',
                                         '-c', 'AppleSmartBattery',
                                         '-a'])
-        d = plistlib.readPlistFromString(output)[0]
-        return d['CycleCount']
+        if output:
+            d = plistlib.readPlistFromString(output)[0]
+            return d['CycleCount']
 
     def get_batteryhealth(self):
         '''Returns the battery health
@@ -397,11 +398,12 @@ class Facts(object):
                                         '-r',
                                         '-c', 'AppleSmartBattery',
                                         '-a'])
-        d = plistlib.readPlistFromString(output)[0]
-        if not d['PermanentFailureStatus']:
-            return 'Healthy'
-        else:
-            return 'Failing'
+        if output:
+            d = plistlib.readPlistFromString(output)[0]
+            if not d['PermanentFailureStatus']:
+                return 'Healthy'
+            else:
+                return 'Failing'
 
     def get_batteryserial(self):
         '''Returns the serial of the battery'''
@@ -409,8 +411,9 @@ class Facts(object):
                                         '-r',
                                         '-c', 'AppleSmartBattery',
                                         '-a'])
-        d = plistlib.readPlistFromString(output)[0]
-        return d['BatterySerialNumber']
+        if output:
+            d = plistlib.readPlistFromString(output)[0]
+            return d['BatterySerialNumber']
 
     def get_batterycharging(self):
         '''Returns the serial of the battery'''
@@ -418,8 +421,9 @@ class Facts(object):
                                         '-r',
                                         '-c', 'AppleSmartBattery',
                                         '-a'])
-        d = plistlib.readPlistFromString(output)[0]
-        return d['IsCharging']
+        if output:
+            d = plistlib.readPlistFromString(output)[0]
+            return d['IsCharging']
 
     def get_batterycharged(self):
         '''Returns the serial of the battery'''
@@ -427,8 +431,9 @@ class Facts(object):
                                         '-r',
                                         '-c', 'AppleSmartBattery',
                                         '-a'])
-        d = plistlib.readPlistFromString(output)[0]
-        return d['FullyCharged']
+        if output:
+            d = plistlib.readPlistFromString(output)[0]
+            return d['FullyCharged']
 
     def get_batteryremaining(self):
         '''Returns the serial of the battery'''
@@ -436,8 +441,9 @@ class Facts(object):
                                         '-r',
                                         '-c', 'AppleSmartBattery',
                                         '-a'])
-        d = plistlib.readPlistFromString(output)[0]
-        return d['TimeRemaining']
+        if output:
+            d = plistlib.readPlistFromString(output)[0]
+            return d['TimeRemaining']
 
     def get_batterycapacity(self):
         '''Returns the serial of the battery'''
@@ -445,14 +451,16 @@ class Facts(object):
                                         '-r',
                                         '-c', 'AppleSmartBattery',
                                         '-a'])
-        d = plistlib.readPlistFromString(output)[0]
-        return d['CurrentCapacity']
+        if output:
+            d = plistlib.readPlistFromString(output)[0]
+            return d['CurrentCapacity']
 
     def get_batterypercentage(self):
         '''Returns the percetage of the battery'''
-        task = ['pmset', '-g', 'batt']
-        return re.findall(r'\d+%', subprocess.check_output(
-                                        task))[0].replace('%','')
+        if 'Book' in self.get_model():
+            task = ['pmset', '-g', 'batt']
+            return re.findall(r'\d+%', subprocess.check_output(
+                                            task))[0].replace('%','')
 
     def get_freespace(self):
         '''Returns the free space on the boot drive'''
