@@ -1,12 +1,11 @@
+This is a collection of snippets, libraries, scripts, etc, mostly culled from gists by people way smarter than me. If I failed to add a reference link in any of these scripts, please let me know and I will gladly do so.
+
+Originally the ideas was to create a single module called 'pyfacts' that could be imported into existing projects. While this is still possible, I've abandonded that original intent and am using this repo for experimentation instead.
+
 pyfacts.py
 =======
 
 This script returns all or specified facts about your Mac.
-
-Requirements
-------------
-+ OS X 10.9.x  
-+ python 2.7  
 
 Standalone
 ----------
@@ -32,14 +31,10 @@ Import the module into your python script:
 	serial = fact.get_serial()
 	print serial
 
-References
-----------
-
-
 License
 -------
 
-	Copyright 2014 Joseph Chilcote
+	Copyright 2016 Joseph Chilcote
 	
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
