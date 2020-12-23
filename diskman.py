@@ -1,6 +1,5 @@
 #!/usr/bin/python
 ## ref: https://gist.github.com/pudquick/5f1baad30024a898e9f2115ac9b0c631
-
 import objc
 from Foundation import NSBundle
 
@@ -43,6 +42,16 @@ class diskRef(object):
     def facts(self):
         possible = [x for x in dir(self.controller.shared) if (x.startswith('is') and x.endswith('_error_'))]
         return [y for y in sorted([x.split('is',1)[-1].rsplit('_error_',1)[0] for x in possible]) if not '_' in y]
+    @property
+    def physical_store(self):
+        # This APFS and other disk types as well supposedly, looking at the code - like CoreStorage, SoftRAID ....
+        try:
+            results = self.controller.shared.physicalDisksForDisk_storageSystemName_error_(self.ref_type, None, None)
+            if results[0] is not None:
+                return diskRef(results[0], self.controller)
+        except:
+            pass
+        return None
     def Is(self, factname):
         if factname not in self.facts:
             raise Exception('no such fact, check disk.facts')
